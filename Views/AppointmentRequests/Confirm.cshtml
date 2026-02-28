@@ -1,0 +1,33 @@
+﻿@model LisBlanc.AdminPanel.Models.AppointmentRequest
+
+@{
+    ViewData["Title"] = "Подтверждение заявки";
+}
+
+<h1>Подтверждение заявки</h1>
+
+<div>
+    <h4>Вы уверены, что хотите подтвердить эту заявку?</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">Клиент</dt>
+        <dd class="col-sm-10">@Model.ClientName</dd>
+
+        <dt class="col-sm-2">Телефон</dt>
+        <dd class="col-sm-10">@Model.ClientPhone</dd>
+
+        <dt class="col-sm-2">Мастер</dt>
+        <dd class="col-sm-10">@Model.Master?.FullName</dd>
+
+        <dt class="col-sm-2">Услуга</dt>
+        <dd class="col-sm-10">@Model.Service?.Name</dd>
+
+        <dt class="col-sm-2">Время</dt>
+    </dl>
+
+    <form asp-action="Confirm">
+        <input type="hidden" asp-for="Id" />
+        <input type="submit" value="Подтвердить" class="btn btn-success" />
+        <a asp-action="Index" class="btn btn-secondary">Назад к списку</a>
+    </form>
+</div>

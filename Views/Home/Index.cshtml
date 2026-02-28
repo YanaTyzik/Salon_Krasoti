@@ -1,0 +1,48 @@
+﻿@{
+    ViewData["Title"] = "Главная";
+}
+
+<div class="text-center welcome-container">
+    <h1 class="welcome-title">Добро пожаловать!</h1>
+    <p class="welcome-subtitle">Вы можете приступать к работе.</p>
+</div>
+
+<style>
+    .welcome-container {
+        padding: 60px 20px;
+        background: linear-gradient(135deg, var(--white) 0%, var(--light-lavender) 100%);
+        border-radius: 30px;
+        box-shadow: 0 10px 30px var(--shadow);
+        margin: 30px auto;
+        max-width: 800px;
+    }
+
+    .welcome-title {
+        font-size: 3.5rem;
+        color: var(--dark-purple);
+        margin-bottom: 20px;
+        font-weight: 700;
+        border-bottom: none;
+        animation: fadeInUp 0.8s ease;
+    }
+
+        .welcome-title::after {
+            display: none;
+        }
+
+    .welcome-subtitle {
+        font-size: 2rem;
+        color: var(--text-dark);
+        margin-top: 20px;
+        font-weight: 400;
+        animation: fadeInUp 1s ease;
+        background: linear-gradient(135deg, var(--purple), var(--dark-purple));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        display: inline-block;
+        padding: 10px 30px;
+        border-radius: 50px;
+        border: 2px solid var(--medium-lavender);
+    }
+</style>

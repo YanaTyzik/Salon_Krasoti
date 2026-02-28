@@ -1,0 +1,452 @@
+/* Основные цвета */
+:root {
+    --white: #ffffff;
+    --light-lavender: #f3e8ff; /* Светло-лиловый для фона */
+    --lavender: #e5d0ff; /* Лиловый для карточек */
+    --medium-lavender: #d4b5ff; /* Средне-лиловый для границ */
+    --purple: #b47aff; /* Насыщенный лиловый для кнопок */
+    --dark-purple: #8a5cd9; /* Темно-лиловый для наведения */
+    --text-dark: #2d1b4e; /* Тёмно-фиолетовый для текста */
+    --text-light: #5a4a6b; /* Светлый текст */
+    --shadow: rgba(180, 122, 255, 0.2); /* Тень с лиловым отливом */
+}
+
+/* Общие стили для body */
+body {
+    background-color: var(--light-lavender);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text-dark);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+/* Контейнер для контента */
+.container {
+    background-color: var(--white);
+    border-radius: 25px 25px 0 0;
+    box-shadow: 0 -5px 20px var(--shadow);
+    padding: 25px 30px;
+    min-height: calc(100vh - 150px);
+    margin-top: 10px;
+}
+
+/* Навигационное меню */
+.navbar {
+    background: linear-gradient(135deg, var(--white) 0%, var(--light-lavender) 100%);
+    box-shadow: 0 4px 15px var(--shadow);
+    padding: 15px 0;
+    border-bottom: 2px solid var(--medium-lavender);
+}
+
+.navbar-brand {
+    color: var(--dark-purple) !important;
+    font-weight: 700;
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+    .navbar-brand:hover {
+        color: var(--purple) !important;
+        transform: scale(1.05);
+        text-shadow: 0 0 10px var(--shadow);
+    }
+
+/* Стили для пунктов меню */
+.navbar-nav {
+    gap: 5px;
+}
+
+.nav-item {
+    position: relative;
+    margin: 0 5px;
+}
+
+.nav-link {
+    color: var(--text-dark) !important;
+    font-weight: 500;
+    padding: 10px 20px !important;
+    border-radius: 30px;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+    /* Эффект при наведении - увеличение и подчеркивание */
+    .nav-link:hover {
+        color: var(--dark-purple) !important;
+        background-color: var(--light-lavender);
+        transform: scale(1.1) translateY(-2px);
+        box-shadow: 0 4px 15px var(--shadow);
+    }
+
+    /* Добавляем подчеркивание при наведении */
+    .nav-link::after {
+        content: '';
+        position: absolute;
+        bottom: 5px;
+        left: 50%;
+        width: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--purple), var(--dark-purple));
+        transition: all 0.3s ease;
+        transform: translateX(-50%);
+        border-radius: 3px;
+    }
+
+    .nav-link:hover::after {
+        width: 70%;
+    }
+
+/* Активный пункт меню */
+.nav-item.active .nav-link {
+    background-color: var(--lavender) !important;
+    color: var(--dark-purple) !important;
+    font-weight: 600;
+    box-shadow: 0 4px 10px var(--shadow);
+}
+
+    .nav-item.active .nav-link::after {
+        width: 70%;
+        background: linear-gradient(90deg, var(--dark-purple), var(--purple));
+    }
+
+/* Кнопка "Привет, пользователь" */
+.navbar-text {
+    color: var(--text-dark) !important;
+    background-color: var(--lavender);
+    padding: 8px 20px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    line-height: 1;
+    transform: translateY(0); /* Убираем возможные смещения */
+    border-radius: 30px;
+    font-weight: 500;
+    margin-right: 10px;
+    box-shadow: 0 2px 8px var(--shadow);
+}
+
+/* Кнопки входа/выхода */
+.navbar-nav .nav-item:last-child .nav-link {
+    background-color: var(--purple);
+    color: var(--white) !important;
+    padding: 8px 25px !important;
+    border-radius: 30px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+    .navbar-nav .nav-item:last-child .nav-link:hover {
+        background-color: var(--dark-purple);
+        transform: scale(1.05) translateY(-2px);
+        box-shadow: 0 6px 20px var(--shadow);
+    }
+
+    .navbar-nav .nav-item:last-child .nav-link::after {
+        display: none;
+    }
+
+/* Заголовки страниц */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-dark);
+    border-bottom: 3px solid var(--medium-lavender);
+    padding-bottom: 12px;
+    margin-bottom: 25px;
+    font-weight: 600;
+    position: relative;
+}
+
+    h1::after, h2::after {
+        content: '';
+        position: absolute;
+        bottom: -3px;
+        left: 0;
+        width: 100px;
+        height: 3px;
+        background: linear-gradient(90deg, var(--purple), var(--dark-purple));
+        border-radius: 3px;
+    }
+
+/* Таблицы */
+.table {
+    background-color: var(--white);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px var(--shadow);
+    border: none;
+}
+
+    .table thead th {
+        background: linear-gradient(135deg, var(--lavender) 0%, var(--medium-lavender) 100%);
+        color: var(--text-dark);
+        font-weight: 600;
+        border: none;
+        padding: 15px;
+        font-size: 1rem;
+    }
+
+    .table tbody tr {
+        transition: all 0.2s ease;
+        border-bottom: 1px solid var(--light-lavender);
+    }
+
+        .table tbody tr:hover {
+            background-color: var(--light-lavender);
+            transform: scale(1.01);
+            box-shadow: 0 2px 10px var(--shadow);
+        }
+
+    .table td {
+        padding: 12px 15px;
+        vertical-align: middle;
+        color: var(--text-dark);
+    }
+
+/* Кнопки */
+.btn {
+    border-radius: 30px;
+    padding: 8px 25px;
+    font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: none;
+    box-shadow: 0 2px 8px var(--shadow);
+    margin: 2px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--purple) 0%, var(--dark-purple) 100%);
+    color: var(--white);
+}
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, var(--dark-purple) 0%, var(--purple) 100%);
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 8px 25px var(--shadow);
+        color: var(--white);
+    }
+
+.btn-secondary {
+    background-color: var(--lavender);
+    color: var(--text-dark);
+}
+
+    .btn-secondary:hover {
+        background-color: var(--medium-lavender);
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 5px 15px var(--shadow);
+    }
+
+.btn-warning {
+    background: linear-gradient(135deg, #ffd966, #f0b400);
+    color: var(--text-dark);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ff9999, #ff6666);
+    color: var(--white);
+}
+
+.btn-info {
+    background: linear-gradient(135deg, var(--medium-lavender), var(--purple));
+    color: var(--white);
+}
+
+.btn-sm {
+    padding: 5px 15px;
+    font-size: 0.875rem;
+}
+
+/* Карточки */
+.card {
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px var(--shadow);
+    background-color: var(--white);
+    transition: all 0.3s ease;
+}
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px var(--shadow);
+    }
+
+.card-header {
+    background: linear-gradient(135deg, var(--lavender) 0%, var(--medium-lavender) 100%);
+    border: none;
+    padding: 15px 20px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.card-body {
+    padding: 20px;
+}
+
+/* Формы */
+.form-control {
+    border-radius: 30px;
+    border: 2px solid var(--lavender);
+    padding: 10px 20px;
+    transition: all 0.3s ease;
+    background-color: var(--white);
+}
+
+    .form-control:focus {
+        border-color: var(--purple);
+        box-shadow: 0 0 0 0.2rem var(--shadow);
+        outline: none;
+    }
+
+.form-label, label {
+    color: var(--text-dark);
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+
+/* Badges / статусы */
+.badge {
+    padding: 8px 15px;
+    border-radius: 30px;
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.bg-primary {
+    background: linear-gradient(135deg, var(--purple), var(--dark-purple)) !important;
+}
+
+.bg-success {
+    background: linear-gradient(135deg, #a8e6cf, #56ab91) !important;
+    color: var(--text-dark);
+}
+
+.bg-danger {
+    background: linear-gradient(135deg, #ffb3b3, #ff8080) !important;
+    color: var(--text-dark);
+}
+
+.bg-warning {
+    background: linear-gradient(135deg, #ffe5b4, #ffcc80) !important;
+    color: var(--text-dark);
+}
+
+/* Пагинация и навигация по датам */
+.pagination, .date-navigation {
+    background-color: var(--white);
+    padding: 15px;
+    border-radius: 30px;
+    box-shadow: 0 2px 10px var(--shadow);
+}
+
+/* Календарь расписания */
+.schedule-table {
+    background-color: var(--white);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px var(--shadow);
+}
+
+    .schedule-table th {
+        background: linear-gradient(135deg, var(--lavender) 0%, var(--medium-lavender) 100%);
+        color: var(--text-dark);
+        font-weight: 600;
+        padding: 12px;
+        text-align: center;
+    }
+
+    .schedule-table td {
+        border: 1px solid var(--light-lavender);
+        padding: 8px;
+        text-align: center;
+    }
+
+/* Стили для слотов расписания */
+.slot-booked {
+    background: linear-gradient(135deg, #e8f0fe, #d4e4fc) !important;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+    .slot-booked:hover {
+        transform: scale(1.02);
+        box-shadow: 0 2px 8px var(--shadow);
+    }
+
+.slot-dayoff {
+    background: linear-gradient(135deg, #fff3cd, #ffe69c) !important;
+    border-radius: 8px;
+}
+
+.slot-sickleave {
+    background: linear-gradient(135deg, #f8d7da, #f1aeb5) !important;
+    border-radius: 8px;
+}
+
+.slot-vacation {
+    background: linear-gradient(135deg, #d1e7dd, #a3cfbb) !important;
+    border-radius: 8px;
+}
+
+.free-slot {
+    background-color: var(--light-lavender);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+    .free-slot:hover {
+        background-color: var(--lavender);
+        cursor: pointer;
+    }
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .navbar-nav {
+        gap: 0;
+    }
+
+    .nav-link {
+        padding: 8px 15px !important;
+    }
+
+        .nav-link:hover {
+            transform: scale(1.05) translateY(-1px);
+        }
+
+    .container {
+        padding: 15px;
+    }
+}
+
+/* Анимации */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.container {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+/* Ссылки */
+a {
+    color: var(--purple);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+    a:hover {
+        color: var(--dark-purple);
+        text-decoration: none;
+        transform: scale(1.05);
+        display: inline-block;
+    }

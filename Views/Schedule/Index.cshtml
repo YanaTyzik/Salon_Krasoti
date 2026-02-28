@@ -1,0 +1,185 @@
+﻿@model LisBlanc.AdminPanel.Models.ScheduleViewModel
+
+@{
+    ViewData["Title"] = "Расписание на " + Model.SelectedDate.ToString("dd.MM.yyyy");
+}
+
+<h1>Расписание мастеров</h1>
+
+<!-- Навигация по датам -->
+<div class="row mb-3">
+    <div class="col-md-6">
+        <form method="get" class="form-inline">
+            <div class="input-group">
+                <input type="date" name="date" value="@Model.SelectedDate.ToString("yyyy-MM-dd")" class="form-control" />
+                <button type="submit" class="btn btn-primary">Показать</button>
+            </div>
+        </form>
+    </div>
+    <div class="col-md-6 text-end">
+        <a asp-action="CreateBlock" class="btn btn-warning">➕ Добавить блокировку</a>
+        <a asp-action="Index" asp-route-date="@Model.SelectedDate.AddDays(-1).ToString("yyyy-MM-dd")" class="btn btn-secondary">← Пред. день</a>
+        <a asp-action="Index" asp-route-date="@DateTime.Today.ToString("yyyy-MM-dd")" class="btn btn-info">Сегодня</a>
+        <a asp-action="Index" asp-route-date="@Model.SelectedDate.AddDays(1).ToString("yyyy-MM-dd")" class="btn btn-secondary">След. день →</a>
+    </div>
+</div>
+
+<!-- Таблица расписания -->
+<div class="table-responsive">
+    <table class="table table-bordered schedule-table">
+        <thead>
+            <tr>
+                <th style="width: 150px;">Мастер</th>
+                @foreach (var timeSlot in Model.TimeSlots)
+                {
+                    <th class="text-center">@timeSlot</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var master in Model.Masters)
+            {
+                <tr>
+                    <td>
+                        <strong>@master.FullName</strong><br />
+                        <small class="text-muted">@master.Specialization</small>
+                    </td>
+
+                    @{
+                        // Словарь для отслеживания уже обработанных слотов
+                        var processedSlots = new HashSet<int>();
+                        int timeIndex = 0;
+                    }
+
+                    @while (timeIndex < Model.TimeSlots.Count)
+                    {
+                        var currentTimeSlot = Model.TimeSlots[timeIndex];
+
+                        // Формируем дату и время для этого слота
+                        var slotDateTime = Model.SelectedDate.Date.Add(TimeSpan.Parse(currentTimeSlot));
+                        var slotEndTime = slotDateTime.AddMinutes(30);
+
+                        // Ищем занятый слот, который пересекается с этим временем
+                        var occupiedSlot = Model.Slots.FirstOrDefault(s =>
+                        s.MasterId == master.Id &&
+                        !processedSlots.Contains(s.Id) && // Проверяем, не обработан ли уже слот
+                        s.StartTime <= slotEndTime &&
+                        s.EndTime > slotDateTime);
+
+                        if (occupiedSlot != null)
+                        {
+                            // Помечаем слот как обработанный
+                            processedSlots.Add(occupiedSlot.Id);
+
+                            // Рассчитываем, сколько ячеек занимает слот
+                            var durationMinutes = (occupiedSlot.EndTime - occupiedSlot.StartTime).TotalMinutes;
+                            var colSpan = (int)Math.Ceiling(durationMinutes / 30);
+
+                            <td colspan="@colSpan" class="text-center @GetSlotClass(occupiedSlot)" data-slot-id="@occupiedSlot.Id">
+                                @Html.Raw(GetSlotText(occupiedSlot))
+                                @if (occupiedSlot.Status != SlotStatus.Booked)
+                                {
+                                    <form asp-action="DeleteSlot" asp-route-id="@occupiedSlot.Id" method="post" style="display:inline;" onsubmit="return confirm('Удалить этот слот?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-link text-danger p-0">✖</button>
+                                    </form>
+                                }
+                            </td>
+
+                            // Пропускаем нужное количество временных слотов
+                            timeIndex += colSpan;
+                        }
+                        else
+                        {
+                            // Свободный слот
+                            <td class="text-center free-slot">
+                                <span class="text-muted">—</span>
+                            </td>
+                            timeIndex++;
+                        }
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- Легенда -->
+<div class="row mt-3">
+    <div class="col">
+        <span class="badge bg-success">🟢 Занято клиентом</span>
+        <span class="badge bg-warning text-dark">🟡 Выходной</span>
+        <span class="badge bg-danger">🔴 Больничный</span>
+        <span class="badge bg-info text-dark">🔵 Отпуск</span>
+    </div>
+</div>
+
+<!-- Добавим немного стилей -->
+<style>
+    .schedule-table td {
+        height: 50px;
+        vertical-align: middle;
+        padding: 4px;
+        font-size: 0.9em;
+    }
+
+    .slot-booked {
+        background-color: #d4edda;
+        cursor: pointer;
+    }
+
+    .slot-dayoff {
+        background-color: #fff3cd;
+    }
+
+    .slot-sickleave {
+        background-color: #f8d7da;
+    }
+
+    .slot-vacation {
+        background-color: #d1ecf1;
+    }
+
+    .free-slot {
+        background-color: #f8f9fa;
+    }
+
+    .schedule-table th {
+        text-align: center;
+        background-color: #e9ecef;
+        font-size: 0.85em;
+        font-weight: 600;
+    }
+</style>
+
+@functions {
+    string GetSlotClass(ScheduleSlot slot)
+    {
+        return slot.Status switch
+        {
+            SlotStatus.Booked => "slot-booked",
+            SlotStatus.DayOff => "slot-dayoff",
+            SlotStatus.SickLeave => "slot-sickleave",
+            SlotStatus.Vacation => "slot-vacation",
+            _ => ""
+        };
+    }
+
+    string GetSlotText(ScheduleSlot slot)
+    {
+        if (slot.Status == SlotStatus.Booked)
+        {
+            var clientName = slot.AppointmentRequest?.ClientName ?? "Клиент";
+            var serviceName = slot.AppointmentRequest?.Service?.Name ?? "";
+            return $"{clientName}<br/><small>{serviceName}</small>";
+        }
+
+        return slot.Status switch
+        {
+            SlotStatus.DayOff => "Выходной",
+            SlotStatus.SickLeave => "Больничный",
+            SlotStatus.Vacation => "Отпуск",
+            _ => ""
+        };
+    }
+}
