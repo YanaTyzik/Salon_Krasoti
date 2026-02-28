@@ -1,0 +1,97 @@
+﻿@model LisBlanc.AdminPanel.Models.AppointmentRequest
+
+@{
+    ViewData["Title"] = "Редактирование заявки";
+}
+
+<h1>Редактирование заявки</h1>
+
+<h4>Заявка на запись</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" />
+
+            <div class="form-group">
+                <label asp-for="MasterId" class="control-label">Мастер</label>
+                <select asp-for="MasterId" class="form-control" asp-items="ViewBag.MasterId">
+                    <option value="">-- Выберите мастера --</option>
+                </select>
+                <span asp-validation-for="MasterId" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="ServiceId" class="control-label">Услуга</label>
+                <select asp-for="ServiceId" class="form-control" asp-items="ViewBag.ServiceId">
+                    <option value="">-- Выберите услугу --</option>
+                </select>
+                <span asp-validation-for="ServiceId" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="ClientName" class="control-label">Имя клиента</label>
+                <input asp-for="ClientName" class="form-control" />
+                <span asp-validation-for="ClientName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="ClientPhone" class="control-label">Телефон клиента</label>
+                <input asp-for="ClientPhone" class="form-control" />
+                <span asp-validation-for="ClientPhone" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="CreatedAt" class="control-label">Дата и время записи</label>
+                <input asp-for="CreatedAt" class="form-control" type="datetime-local" />
+                <span asp-validation-for="CreatedAt" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Status" class="control-label">Статус</label>
+                <select asp-for="Status" class="form-control" asp-items="Html.GetEnumSelectList<RequestStatus>()" id="statusSelect">
+                    <option value="">-- Выберите статус --</option>
+                </select>
+                <span asp-validation-for="Status" class="text-danger"></span>
+            </div>
+
+            <div class="form-group" id="rejectionReasonGroup" style="display: none;">
+                <label asp-for="RejectionReason" class="control-label">Причина отказа</label>
+                <textarea asp-for="RejectionReason" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="RejectionReason" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mt-3">
+                <input type="submit" value="Сохранить" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Назад к списку</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function() {
+            // Показываем/скрываем поле причины отказа в зависимости от статуса
+            function toggleRejectionReason() {
+                var status = $('#statusSelect').val();
+                if (status == '@((int)RequestStatus.Rejected)') {
+                    $('#rejectionReasonGroup').show();
+                } else {
+                    $('#rejectionReasonGroup').hide();
+                }
+            }
+
+            // Вызываем при загрузке страницы
+            toggleRejectionReason();
+
+            // Вызываем при изменении статуса
+            $('#statusSelect').change(toggleRejectionReason);
+        });
+    </script>
+}

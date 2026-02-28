@@ -1,0 +1,73 @@
+﻿@model LisBlanc.AdminPanel.Models.AppointmentRequest
+
+@{
+    ViewData["Title"] = "Удаление заявки";
+}
+
+<h1>Удаление заявки</h1>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <strong>Информация о заявке</strong>
+    </div>
+    <div class="card-body">
+        <div class="row mb-2">
+            <div class="col-sm-3 fw-bold">Имя клиента:</div>
+            <div class="col-sm-9">@Html.DisplayFor(model => model.ClientName)</div>
+        </div>
+
+        <div class="row mb-2">
+            <div class="col-sm-3 fw-bold">Телефон клиента:</div>
+            <div class="col-sm-9">@Html.DisplayFor(model => model.ClientPhone)</div>
+        </div>
+
+       
+        <div class="row mb-2">
+            <div class="col-sm-3 fw-bold">Дата создания:</div>
+            <div class="col-sm-9">@Model.CreatedAt.ToString("dd.MM.yyyy HH:mm")</div>
+        </div>
+
+        <div class="row mb-2">
+            <div class="col-sm-3 fw-bold">Статус:</div>
+            <div class="col-sm-9">
+                @switch (Model.Status)
+                {
+                   
+                    case RequestStatus.Confirmed:
+                        <span class="badge bg-success">Подтверждена</span>
+                        break;
+                    case RequestStatus.Rejected:
+                        <span class="badge bg-danger">Отклонена</span>
+                        break;
+                }
+            </div>
+        </div>
+
+
+        <div class="row mb-2">
+            <div class="col-sm-3 fw-bold">Мастер:</div>
+            <div class="col-sm-9">@(Model.Master?.FullName ?? "Не указан")</div>
+        </div>
+
+        <div class="row mb-2">
+            <div class="col-sm-3 fw-bold">Услуга:</div>
+            <div class="col-sm-9">@(Model.Service?.Name ?? "Не указана")</div>
+        </div>
+
+        @if (Model.Service != null)
+        {
+            <div class="row mb-2">
+                <div class="col-sm-3 fw-bold">Стоимость:</div>
+                <div class="col-sm-9">@Model.Service.Price ₽</div>
+            </div>
+
+           
+        }
+    </div>
+</div>
+
+<form asp-action="Delete" class="mt-3">
+    <input type="hidden" asp-for="Id" />
+    <input type="submit" value="Удалить" class="btn btn-danger" />
+    <a asp-action="Index" class="btn btn-secondary">Назад к списку</a>
+</form>
