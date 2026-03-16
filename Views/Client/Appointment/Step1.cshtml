@@ -2,40 +2,71 @@
 
 @{
     ViewData["Title"] = "Запись онлайн - шаг 1";
+
+    // Получаем все категории
+    var categories = Model.Select(s => s.Category).Distinct().OrderBy(c => c).ToList();
+    var firstCategory = categories.FirstOrDefault() ?? "";
 }
 
 <div class="container mt-4">
     <!-- Прогресс-бар -->
     <div class="progress mb-4" style="height: 30px;">
         <div class="progress-bar bg-primary" role="progressbar" style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">
-            Шаг 1 из 4
+            Шаг 1 из 4: Выбор услуги
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-12">
-            <h2 class="text-center mb-4">Выберите услугу</h2>
+    <h2 class="text-center mb-4">Выберите услугу</h2>
 
-            @if (!Model.Any())
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center">
+            Услуги временно недоступны
+        </div>
+    }
+    else
+    {
+        <!-- Вкладки с категориями -->
+        <ul class="nav nav-tabs justify-content-center mb-4" id="categoryTabs" role="tablist">
+            @foreach (var category in categories)
             {
-                <div class="alert alert-info text-center">
-                    <i class="fas fa-info-circle"></i>
-                    В данный момент услуги недоступны. Пожалуйста, зайдите позже.
-                </div>
+                var isActive = category == firstCategory;
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link @(isActive ? "active" : "")"
+                            id="tab-@category"
+                            data-bs-toggle="tab"
+                            data-bs-target="#content-@category"
+                            type="button"
+                            role="tab">
+                        @category
+                    </button>
+                </li>
             }
-            else
+        </ul>
+
+        <!-- Контент вкладок -->
+        <div class="tab-content" id="categoryTabContent">
+            @foreach (var category in categories)
             {
-                <form asp-action="Step1" method="post" id="serviceForm">
+                var isActive = category == firstCategory;
+                var servicesInCategory = Model.Where(s => s.Category == category).ToList();
+
+                <div class="tab-pane fade @(isActive ? "show active" : "")"
+                     id="content-@category"
+                     role="tabpanel">
+
                     <div class="row">
-                        @foreach (var service in Model)
+                        @foreach (var service in servicesInCategory)
                         {
-                            <div class="col-md-6 col-lg-4">
+                            <div class="col-md-6 col-lg-4 mb-4">
                                 <div class="service-card" data-service-id="@service.Id">
                                     <div class="card-body">
-                                        <span class="badge-category float-end">@service.Category</span>
                                         <h5 class="card-title">@service.Name</h5>
-                                        <p class="card-text">@service.Description</p>
-                                        <div class="d-flex justify-content-between align-items-center">
+                                        @if (!string.IsNullOrEmpty(service.Description))
+                                        {
+                                            <p class="card-text text-muted">@service.Description</p>
+                                        }
+                                        <div class="d-flex justify-content-between align-items-center mt-3">
                                             <span class="price">@service.Price.ToString("N0") ₽</span>
                                             <span class="duration">
                                                 <i class="far fa-clock"></i> @service.DurationMinutes мин
@@ -46,26 +77,94 @@
                             </div>
                         }
                     </div>
-
-                    <input type="hidden" name="serviceId" id="selectedServiceId" value="" />
-
-                    <div class="text-center mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg" id="nextBtn" disabled>
-                            Далее <i class="fas fa-arrow-right"></i>
-                        </button>
-                    </div>
-                </form>
+                </div>
             }
         </div>
-    </div>
+
+        <div id="loadingSpinner" style="display: none;" class="text-center mt-3">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+            <p>Проверяем доступность мастеров...</p>
+        </div>
+
+        <script>
+            document.getElementById('serviceForm').addEventListener('submit', function() {
+                document.getElementById('loadingSpinner').style.display = 'block';
+            });
+        </script>
+
+        <!-- Форма отправки -->
+        <form asp-action="Step1" method="post" id="serviceForm">
+            <input type="hidden" name="serviceId" id="selectedServiceId" value="" />
+
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-primary btn-lg" id="nextBtn" disabled>
+                    Далее <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </form>
+    }
 </div>
+
+    <style>
+        /* Стили для вкладок */
+        .nav-tabs .nav-link {
+            color: #495057;
+            font-weight: 500;
+            padding: 10px 20px;
+            border: none;
+            border-bottom: 3px solid transparent;
+        }
+
+            .nav-tabs .nav-link:hover {
+                border-bottom-color: #dee2e6;
+            }
+
+            .nav-tabs .nav-link.active {
+                color: #0d6efd;
+                border-bottom-color: #0d6efd;
+                background: none;
+            }
+
+        /* Стили для карточек услуг */
+        .service-card {
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            height: 100%;
+        }
+
+            .service-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+                border-color: #0d6efd;
+            }
+
+            .service-card.selected {
+                border-color: #0d6efd;
+                background-color: #f0f7ff;
+            }
+
+            .service-card .price {
+                font-size: 1.2rem;
+                font-weight: 700;
+                color: #0d6efd;
+            }
+
+            .service-card .duration {
+                font-size: 0.9rem;
+                color: #6c757d;
+            }
+    </style>
 
 @section Scripts {
     <script>
         // Выбор услуги
         document.querySelectorAll('.service-card').forEach(card => {
             card.addEventListener('click', function() {
-                // Убираем выделение у всех
+                // Убираем выделение со всех карточек во всех вкладках
                 document.querySelectorAll('.service-card').forEach(c => {
                     c.classList.remove('selected');
                 });
@@ -79,6 +178,17 @@
 
                 // Активируем кнопку
                 document.getElementById('nextBtn').disabled = false;
+            });
+        });
+
+        // При переключении вкладки сбрасываем выделение
+        document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+            tab.addEventListener('shown.bs.tab', function() {
+                document.querySelectorAll('.service-card').forEach(c => {
+                    c.classList.remove('selected');
+                });
+                document.getElementById('selectedServiceId').value = '';
+                document.getElementById('nextBtn').disabled = true;
             });
         });
     </script>

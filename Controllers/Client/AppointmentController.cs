@@ -24,20 +24,70 @@ namespace LisBlanc.AdminPanel.Controllers.Client
             return View("/Views/Client/Appointment/Step1.cshtml", services);
         }
 
-        // POST: /Client/Appointment/Step1
         [HttpPost]
-            public async Task<IActionResult> Step1(int serviceId)
-            {
-                // Запоминаем выбранную услугу в сессии или временных данных
-                TempData["ServiceId"] = serviceId;
+        public async Task<IActionResult> Step1(int serviceId)
+        {
+            TempData["ServiceId"] = serviceId;
 
-                // Перенаправляем на шаг выбора мастера
-                return RedirectToAction("Step2");
+            // Получаем выбранную услугу
+            var selectedService = await _context.Services.FindAsync(serviceId);
+
+            if (selectedService == null)
+            {
+                return RedirectToAction("Step1");
             }
 
-            // GET: /Client/Appointment/Step2
-            // Шаг 2: Выбор мастера
-            public async Task<IActionResult> Step2()
+            // Получаем всех активных мастеров с подходящей специализацией
+            var allMasters = await _context.Masters
+                .Where(m => m.IsActive &&
+                            m.Specialization == selectedService.Category)
+                .ToListAsync();
+
+            // Фильтруем: оставляем только тех, у кого есть свободные слоты
+            var availableMasters = new List<Master>();
+
+            foreach (var master in allMasters)
+            {
+                if (await MasterHasAvailableSlots(master.Id, serviceId))
+                {
+                    availableMasters.Add(master);
+                }
+            }
+
+            // Если есть мастера со слотами — показываем их
+            if (availableMasters.Any())
+            {
+                return View("~/Views/Client/Appointment/Step2.cshtml", availableMasters);
+            }
+
+            // Если нет ни одного — показываем всех с предупреждением
+            ViewBag.Warning = "На ближайшие дни нет свободных слотов. Показаны все мастера, но записаться можно только на те дни, где есть свободное время.";
+            return View("~/Views/Client/Appointment/Step2.cshtml", allMasters);
+        }
+
+        // GET: /Client/Appointment/ChooseCategory
+        public async Task<IActionResult> ChooseCategory()
+        {
+            // Получаем все уникальные категории из услуг
+            var categories = await _context.Services
+                .Select(s => s.Category)
+                .Distinct()
+                .OrderBy(c => c)
+                .ToListAsync();
+            return View(categories);
+        }
+
+        // POST: /Client/Appointment/ChooseCategory
+        [HttpPost]
+        public IActionResult ChooseCategory(string category)
+        {
+            TempData["SelectedCategory"] = category;
+            return RedirectToAction("Step1");
+        }
+
+        // GET: /Client/Appointment/Step2
+        // Шаг 2: Выбор мастера
+        public async Task<IActionResult> Step2()
             {
                 if (!TempData.ContainsKey("ServiceId"))
                 {
@@ -56,48 +106,50 @@ namespace LisBlanc.AdminPanel.Controllers.Client
                 return View(masters);
             }
 
-            // POST: /Client/Appointment/Step2
-            [HttpPost]
-            public IActionResult Step2(int masterId)
+        [HttpPost]
+        public IActionResult Step2(int masterId)
+        {
+            TempData["MasterId"] = masterId;
+
+            // Временные данные для Step3
+            int serviceId = (int)TempData["ServiceId"];
+            TempData.Keep("ServiceId");
+
+            // Сразу возвращаем Step3 с нужными данными
+            return RedirectToAction("Step3");
+        }
+
+        // GET: /Client/Appointment/Step3
+        public async Task<IActionResult> Step3(DateTime? date)
+        {
+            if (!TempData.ContainsKey("ServiceId") || !TempData.ContainsKey("MasterId"))
             {
-                TempData["MasterId"] = masterId;
-                return RedirectToAction("Step3");
+                return RedirectToAction("Step1");
             }
 
-            // GET: /Client/Appointment/Step3
-            // Шаг 3: Выбор времени
-            public async Task<IActionResult> Step3(DateTime? date)
-            {
-                if (!TempData.ContainsKey("ServiceId") || !TempData.ContainsKey("MasterId"))
-                {
-                    return RedirectToAction("Step1");
-                }
+            int serviceId = (int)TempData["ServiceId"];
+            int masterId = (int)TempData["MasterId"];
 
-                int serviceId = (int)TempData["ServiceId"];
-                int masterId = (int)TempData["MasterId"];
+            TempData.Keep("ServiceId");
+            TempData.Keep("MasterId");
 
-                TempData.Keep("ServiceId");
-                TempData.Keep("MasterId");
+            DateTime selectedDate = date ?? DateTime.Today;
 
-                // Выбранная дата (если не выбрана - сегодня)
-                DateTime selectedDate = date ?? DateTime.Today;
+            var service = await _context.Services.FindAsync(serviceId);
 
-                // Получаем услугу, чтобы узнать длительность
-                var service = await _context.Services.FindAsync(serviceId);
+            // ИСПРАВЛЕНО: вызываем правильный метод
+            var (availableSlots, blockMessage) = await GetAvailableSlotsWithMessage(masterId, serviceId, selectedDate);
 
-                // Получаем свободные слоты на выбранную дату
-                var availableSlots = await GetAvailableSlots(masterId, serviceId, selectedDate);
+            ViewBag.MasterId = masterId;
+            ViewBag.Service = service;
+            ViewBag.SelectedDate = selectedDate;
+            ViewBag.AvailableSlots = availableSlots;
+            ViewBag.BlockMessage = blockMessage;
 
-                ViewBag.MasterId = masterId;
-                ViewBag.Service = service;
-                ViewBag.SelectedDate = selectedDate;
-                ViewBag.AvailableSlots = availableSlots;
-
-                return View();
-            }
-
-            // POST: /Client/Appointment/Step3
-            [HttpPost]
+            return View("~/Views/Client/Appointment/Step3.cshtml");
+        }
+        // POST: /Client/Appointment/Step3
+        [HttpPost]
             public IActionResult Step3(DateTime selectedDateTime)
             {
                 TempData["SelectedDateTime"] = selectedDateTime.ToString("yyyy-MM-dd HH:mm:ss");
@@ -191,77 +243,88 @@ namespace LisBlanc.AdminPanel.Controllers.Client
                 return View();
             }
 
-            // Вспомогательный метод для получения свободных слотов
-            private async Task<List<object>> GetAvailableSlots(int masterId, int serviceId, DateTime date)
+        private async Task<List<object>> GetAvailableSlotsInternal(int masterId, int serviceId, DateTime date)
+        {
+            var service = await _context.Services.FindAsync(serviceId);
+            if (service == null) return new List<object>();
+
+            var startOfDay = date.Date;
+            var endOfDay = startOfDay.AddDays(1).AddTicks(-1);
+
+            // Получаем все занятые слоты мастера на этот день
+            var busySlots = await _context.ScheduleSlots
+                .Where(s => s.MasterId == masterId
+                    && s.StartTime >= startOfDay
+                    && s.StartTime <= endOfDay
+                    && s.Status == SlotStatus.Booked)
+                .ToListAsync();
+
+            // Получаем выходные/больничные/отпуска мастера
+            var dayOffSlots = await _context.ScheduleSlots
+                .Where(s => s.MasterId == masterId
+                    && s.StartTime >= startOfDay
+                    && s.StartTime <= endOfDay
+                    && (s.Status == SlotStatus.DayOff
+                        || s.Status == SlotStatus.SickLeave
+                        || s.Status == SlotStatus.Vacation))
+                .ToListAsync();
+
+            // Проверяем, есть ли блокировка на весь день
+            var fullDayOff = dayOffSlots.FirstOrDefault(s => s.StartTime <= startOfDay && s.EndTime >= endOfDay);
+            if (fullDayOff != null)
             {
-                var service = await _context.Services.FindAsync(serviceId);
-                if (service == null) return new List<object>();
-
-                var startOfDay = date.Date;
-                var endOfDay = startOfDay.AddDays(1).AddTicks(-1);
-
-                // Занятые слоты
-                var busySlots = await _context.ScheduleSlots
-                    .Where(s => s.MasterId == masterId &&
-                                s.StartTime >= startOfDay &&
-                                s.StartTime <= endOfDay &&
-                                s.Status == SlotStatus.Booked)
-                    .ToListAsync();
-
-                // Выходные/больничные
-                var dayOffSlots = await _context.ScheduleSlots
-                    .Where(s => s.MasterId == masterId &&
-                                s.StartTime >= startOfDay &&
-                                s.StartTime <= endOfDay &&
-                                (s.Status == SlotStatus.DayOff ||
-                                 s.Status == SlotStatus.SickLeave ||
-                                 s.Status == SlotStatus.Vacation))
-                    .ToListAsync();
-
-                // Если есть слот на весь день - нет свободного времени
-                if (dayOffSlots.Any(s => s.StartTime <= startOfDay && s.EndTime >= endOfDay))
+                // Определяем тип блокировки для сообщения
+                string message = fullDayOff.Status switch
                 {
-                    return new List<object>();
-                }
+                    SlotStatus.DayOff => "У мастера выходной в этот день",
+                    SlotStatus.SickLeave => "Мастер на больничном в этот день",
+                    SlotStatus.Vacation => "Мастер в отпуске в этот день",
+                    _ => "Мастер не работает в этот день"
+                };
 
-                // Генерируем слоты с 9 до 21 с шагом, равным длительности услуги
-                var availableSlots = new List<object>();
-                var currentTime = startOfDay.AddHours(9);
-
-                while (currentTime < startOfDay.AddHours(21))
-                {
-                    var slotEnd = currentTime.AddMinutes(service.DurationMinutes);
-
-                    if (slotEnd > startOfDay.AddHours(21))
-                    {
-                        break;
-                    }
-
-                    bool isBusy = busySlots.Any(s =>
-                        (currentTime >= s.StartTime && currentTime < s.EndTime) ||
-                        (slotEnd > s.StartTime && slotEnd <= s.EndTime) ||
-                        (s.StartTime >= currentTime && s.StartTime < slotEnd));
-
-                    bool isDayOff = dayOffSlots.Any(s =>
-                        currentTime >= s.StartTime && slotEnd <= s.EndTime);
-
-                    if (!isBusy && !isDayOff)
-                    {
-                        availableSlots.Add(new
-                        {
-                            time = currentTime.ToString("HH:mm"),
-                            value = currentTime.ToString("yyyy-MM-dd HH:mm:ss")
-                        });
-                    }
-
-                    currentTime = currentTime.AddMinutes(30);
-                }
-
-                return availableSlots;
+                // Здесь можно сохранить сообщение, но метод возвращает List<object>
+                // Поэтому просто возвращаем пустой список
+                return new List<object>();
             }
 
-            // Проверка доступности слота
-            private async Task<bool> CheckAvailability(int masterId, int serviceId, DateTime startTime)
+            // Генерируем все возможные слоты с 9:00 до 21:00 с шагом 30 минут
+            var availableSlots = new List<object>();
+            var currentTime = startOfDay.AddHours(9);
+
+            while (currentTime < startOfDay.AddHours(21))
+            {
+                var slotEnd = currentTime.AddMinutes(service.DurationMinutes);
+
+                if (slotEnd > startOfDay.AddHours(21))
+                {
+                    break;
+                }
+
+                bool isBusy = busySlots.Any(s =>
+                    (currentTime >= s.StartTime && currentTime < s.EndTime) ||
+                    (slotEnd > s.StartTime && slotEnd <= s.EndTime) ||
+                    (s.StartTime >= currentTime && s.StartTime < slotEnd));
+
+                bool isDayOff = dayOffSlots.Any(s =>
+                    currentTime >= s.StartTime && slotEnd <= s.EndTime);
+
+                if (!isBusy && !isDayOff)
+                {
+                    availableSlots.Add(new
+                    {
+                        time = currentTime.ToString("HH:mm"),
+                        value = currentTime.ToString("yyyy-MM-dd HH:mm:ss")
+                    });
+                }
+
+                currentTime = currentTime.AddMinutes(30);
+            }
+
+            return availableSlots;
+        }
+
+        // Проверка доступности слота
+        private async Task<bool> CheckAvailability(int masterId, int serviceId, DateTime startTime)
             {
                 var service = await _context.Services.FindAsync(serviceId);
                 if (service == null) return false;
@@ -278,5 +341,67 @@ namespace LisBlanc.AdminPanel.Controllers.Client
 
                 return !conflictingSlots;
             }
+
+        private async Task<(List<object> slots, string message)> GetAvailableSlotsWithMessage(int masterId, int serviceId, DateTime date)
+        {
+            var service = await _context.Services.FindAsync(serviceId);
+            if (service == null) return (new List<object>(), null);
+
+            var startOfDay = date.Date;
+            var endOfDay = startOfDay.AddDays(1).AddTicks(-1);
+
+            var dayOffSlots = await _context.ScheduleSlots
+                .Where(s => s.MasterId == masterId
+                    && s.StartTime >= startOfDay
+                    && s.StartTime <= endOfDay
+                    && (s.Status == SlotStatus.DayOff
+                        || s.Status == SlotStatus.SickLeave
+                        || s.Status == SlotStatus.Vacation))
+                .ToListAsync();
+
+            var fullDayOff = dayOffSlots.FirstOrDefault(s => s.StartTime <= startOfDay && s.EndTime >= endOfDay);
+            if (fullDayOff != null)
+            {
+                string message = fullDayOff.Status switch
+                {
+                    SlotStatus.DayOff => "У мастера выходной в этот день",
+                    SlotStatus.SickLeave => "Мастер на больничном в этот день",
+                    SlotStatus.Vacation => "Мастер в отпуске в этот день",
+                    _ => "Мастер не работает в этот день"
+                };
+                return (new List<object>(), message);
+            }
+
+            var slots = await GetAvailableSlotsInternal(masterId, serviceId, date);
+            return (slots, null);
+
+
         }
+
+        public async Task<IActionResult> GetAvailableSlots(int masterId, int serviceId, DateTime date)
+        {
+            var (slots, _) = await GetAvailableSlotsWithMessage(masterId, serviceId, date);
+            return Json(slots);
+        }
+
+        private async Task<bool> MasterHasAvailableSlots(int masterId, int serviceId, int daysAhead = 7)
+        {
+            var service = await _context.Services.FindAsync(serviceId);
+            if (service == null) return false;
+
+            var startDate = DateTime.Today;
+            var endDate = startDate.AddDays(daysAhead);
+
+            for (var date = startDate; date <= endDate; date = date.AddDays(1))
+            {
+                var (slots, _) = await GetAvailableSlotsWithMessage(masterId, serviceId, date);
+                if (slots.Any())
+                {
+                    return true; // Есть хотя бы один свободный слот
+                }
+            }
+
+            return false; // Нет свободных слотов
+        }
+    }
 }

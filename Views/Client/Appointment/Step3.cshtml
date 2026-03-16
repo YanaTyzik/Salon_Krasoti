@@ -1,19 +1,29 @@
 ﻿@{
-    ViewData["Title"] = "Запись онлайн - шаг 3";
-    Layout = "~/Views/Shared/_Layout.cshtml";
-
+    ViewData["Title"] = "Шаг 3 - выбор времени";
     var service = ViewBag.Service as LisBlanc.AdminPanel.Models.Service;
-    var masterId = (int)ViewBag.MasterId;
     var selectedDate = (DateTime)ViewBag.SelectedDate;
     var availableSlots = ViewBag.AvailableSlots as List<object>;
 }
 
-<div class="container mt-5">
+<div class="container mt-4">
+    @if (ViewBag.BlockMessage != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="fas fa-info-circle"></i> @ViewBag.BlockMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    <div class="progress mb-4" style="height: 30px;">
+        <div class="progress-bar bg-primary" role="progressbar" style="width: 75%;" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">
+            Шаг 3 из 4: Выбор времени
+        </div>
+    </div>
+
     <div class="row">
         <div class="col-md-8 offset-md-2">
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <h4>Шаг 3 из 4: Выберите время</h4>
+                    <h4>Выберите удобное время</h4>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-info">
@@ -22,25 +32,23 @@
                     </div>
 
                     <!-- Выбор даты -->
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <label for="datePicker" class="form-label">Выберите дату:</label>
-                            <input type="date" id="datePicker" class="form-control"
-                                   value="@selectedDate.ToString("yyyy-MM-dd")" />
-                        </div>
+                    <div class="mb-4">
+                        <label for="datePicker" class="form-label">Выберите дату:</label>
+                        <input type="date" id="datePicker" class="form-control"
+                               value="@selectedDate.ToString("yyyy-MM-dd")" />
                     </div>
 
                     <!-- Свободные слоты -->
                     <div id="slotsContainer" class="row">
                         @if (availableSlots != null && availableSlots.Any())
                         {
-                            @foreach (var slot in availableSlots)
+                            foreach (var slot in availableSlots)
                             {
                                 <div class="col-md-3 mb-2">
                                     <button type="button"
                                             class="btn btn-outline-success w-100 time-slot"
-                                            data-time="@slot.GetType().GetProperty("value").GetValue(slot)">
-                                        @slot.GetType().GetProperty("time").GetValue(slot)
+                                            data-time="@slot.GetType().GetProperty("value")?.GetValue(slot)">
+                                        @slot.GetType().GetProperty("time")?.GetValue(slot)
                                     </button>
                                 </div>
                             }
@@ -59,7 +67,7 @@
                         <input type="hidden" name="selectedDateTime" id="selectedDateTime" value="" />
 
                         <div class="text-center mt-4">
-                            <a asp-action="Step2" class="btn btn-secondary">Назад</a>
+                            <a href="javascript:history.back()" class="btn btn-secondary">Назад</a>
                             <button type="submit" class="btn btn-primary" id="nextBtn" disabled>
                                 Далее
                             </button>
@@ -73,7 +81,7 @@
 
 @section Scripts {
     <script>
-        // Обработчик выбора временного слота
+        // Выбор временного слота
         document.querySelectorAll('.time-slot').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('.time-slot').forEach(b => {
@@ -89,13 +97,12 @@
             });
         });
 
-        // Обработчик смены даты
+        // Смена даты
         document.getElementById('datePicker').addEventListener('change', function() {
             let date = this.value;
-            let masterId = @masterId;
+            let masterId = @ViewBag.MasterId;
             let serviceId = @service.Id;
 
-            // AJAX запрос для получения свободных слотов
             fetch(`/Client/Appointment/GetAvailableSlots?masterId=${masterId}&serviceId=${serviceId}&date=${date}`)
                 .then(response => response.json())
                 .then(data => {

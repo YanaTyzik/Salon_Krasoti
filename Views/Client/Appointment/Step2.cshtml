@@ -1,81 +1,109 @@
 ﻿@model IEnumerable<LisBlanc.AdminPanel.Models.Master>
 
 @{
-    ViewData["Title"] = "Запись онлайн - шаг 2";
-    Layout = "~/Views/Shared/_Layout.cshtml";
-    int serviceId = ViewBag.ServiceId;
+    ViewData["Title"] = "Шаг 2 - выбор мастера";
 }
 
-<div class="container mt-5">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4>Шаг 2 из 4: Выберите мастера</h4>
-                </div>
-                <div class="card-body">
-                    <form asp-action="Step2" method="post">
-                        <div class="row">
-                            @foreach (var master in Model)
-                            {
-                                <div class="col-md-6 mb-3">
-                                    <div class="card master-card" onclick="selectMaster(@master.Id)">
-                                        <div class="card-body">
-                                            <h5 class="card-title">@master.FullName</h5>
-                                            <p class="card-text">
-                                                <strong>Специализация:</strong> @master.Specialization
-                                            </p>
-                                            <p class="card-text">
-                                                <span class="badge bg-success">Активен</span>
-                                            </p>
-                                            <button type="button"
-                                                    class="btn btn-outline-primary select-master"
-                                                    data-master-id="@master.Id">
-                                                Выбрать
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
+@if (ViewBag.Warning != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        @ViewBag.Warning
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
 
-                        <input type="hidden" name="masterId" id="selectedMasterId" value="" />
-
-                        <div class="text-center mt-3">
-                            <a asp-action="Step1" class="btn btn-secondary">Назад</a>
-                            <button type="submit" class="btn btn-primary" id="nextBtn" disabled>
-                                Далее
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> 
+        На данный момент нет доступных мастеров для выбранной услуги.
+    </div>
+}
+else
+{ 
+<div class="container mt-4">
+    <!-- Прогресс-бар -->
+    <div class="progress mb-4" style="height: 30px;">
+        <div class="progress-bar bg-primary" role="progressbar" style="width: 50%;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
+            Шаг 2 из 4: Выбор мастера
         </div>
     </div>
+
+    <h2 class="text-center mb-4">Выберите мастера</h2>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-warning text-center">
+            На данный момент нет доступных мастеров
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var master in Model)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="card master-card" data-master-id="@master.Id">
+                        <div class="card-body">
+                            <h5 class="card-title">@master.FullName</h5>
+                            <p class="card-text">
+                                <strong>Специализация:</strong> @master.Specialization
+                            </p>
+                            <p class="card-text">
+                                <span class="badge bg-success">Активен</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <form asp-action="Step2" method="post" id="masterForm">
+            <input type="hidden" name="masterId" id="selectedMasterId" value="" />
+
+            <div class="text-center mt-4">
+                <a href="javascript:history.back()" class="btn btn-secondary">Назад</a>
+                <button type="submit" class="btn btn-primary" id="nextBtn" disabled>
+                    Далее
+                </button>
+            </div>
+        </form>
+    }
 </div>
 
-@section Scripts {
-    <script>
-        function selectMaster(masterId) {
-            document.querySelectorAll('.master-card').forEach(c => {
-                c.classList.remove('border-primary', 'border-3');
-            });
-            event.currentTarget.classList.add('border-primary', 'border-3');
-            document.getElementById('selectedMasterId').value = masterId;
-            document.getElementById('nextBtn').disabled = false;
+<style>
+    .master-card {
+        cursor: pointer;
+        transition: all 0.3s;
+        border: 2px solid #dee2e6;
+        border-radius: 10px;
+    }
+
+        .master-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            border-color: #0d6efd;
         }
 
-        document.querySelectorAll('.select-master').forEach(btn => {
-            btn.addEventListener('click', function() {
-                let masterId = this.getAttribute('data-master-id');
-                document.getElementById('selectedMasterId').value = masterId;
-                document.getElementById('nextBtn').disabled = false;
+        .master-card.selected {
+            border-color: #0d6efd;
+            background-color: #f0f7ff;
+        }
+</style>
 
-                document.querySelectorAll('.master-card').forEach(c => {
-                    c.classList.remove('border-primary', 'border-3');
-                });
-                this.closest('.master-card').classList.add('border-primary', 'border-3');
+<script>
+    document.querySelectorAll('.master-card').forEach(card => {
+        card.addEventListener('click', function() {
+            document.querySelectorAll('.master-card').forEach(c => {
+                c.classList.remove('selected');
             });
+
+            this.classList.add('selected');
+
+            let masterId = this.getAttribute('data-master-id');
+            document.getElementById('selectedMasterId').value = masterId;
+            document.getElementById('nextBtn').disabled = false;
         });
-    </script>
+    });
+</script>
 }
