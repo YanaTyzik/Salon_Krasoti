@@ -1,0 +1,64 @@
+﻿@model CreateAppointmentRequestViewModel
+
+@{
+    ViewData["Title"] = "Запись онлайн - шаг 4";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4>Шаг 4 из 4: Ваши контактные данные</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                        <input type="hidden" asp-for="MasterId" />
+                        <input type="hidden" asp-for="ServiceId" />
+                        <input type="hidden" asp-for="SelectedDateTime" />
+
+                        <div class="mb-3">
+                            <label asp-for="ClientName" class="form-label"></label>
+                            <input asp-for="ClientName" class="form-control" placeholder="Введите ваше имя" />
+                            <span asp-validation-for="ClientName" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ClientPhone" class="form-label"></label>
+                            <input asp-for="ClientPhone" class="form-control" placeholder="+7 (XXX) XXX-XX-XX" />
+                            <span asp-validation-for="ClientPhone" class="text-danger"></span>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <strong>Вы выбрали:</strong><br />
+                            <!-- Здесь можно показать выбранные услугу, мастера и время -->
+                        </div>
+
+                        <div class="text-center">
+                            <a asp-action="Step3" class="btn btn-secondary">Назад</a>
+                            <button type="submit" class="btn btn-success">Записаться</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        // Маска для телефона (простая)
+        document.getElementById('ClientPhone').addEventListener('input', function(e) {
+            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
+            e.target.value = !x[2] ? x[1] :
+                '+7 (' + x[2] + ') ' + x[3] + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
+        });
+    </script>
+}

@@ -4,8 +4,10 @@
 
 <div class="text-center welcome-container">
     <h1 class="welcome-title">Добро пожаловать!</h1>
-    <p class="welcome-subtitle">Вы можете приступать к работе.</p>
+    <a href="/Appointment/Step1" class="btn btn-primary btn-lg">Записаться онлайн</a>
 </div>
+
+
 
 <style>
     .welcome-container {
@@ -44,5 +46,182 @@
         padding: 10px 30px;
         border-radius: 50px;
         border: 2px solid var(--medium-lavender);
+    }
+</style>
+
+<!-- Преимущества -->
+<div class="container my-5">
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-4">
+                    <div class="display-1 mb-3" style="color: #b47aff;">✓</div>
+                    <h3 class="h5 fw-bold mb-3" style="color: #2d1b4e;">Профессионалы</h3>
+                    <p class="mb-0" style="color: #5a4a6b;">Мастера с опытом работы более 5 лет</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-4">
+                    <div class="display-1 mb-3" style="color: #b47aff;">✨</div>
+                    <h3 class="h5 fw-bold mb-3" style="color: #2d1b4e;">Премиум-уход</h3>
+                    <p class="mb-0" style="color: #5a4a6b;">Только профессиональная косметика</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-4">
+                    <div class="display-1 mb-3" style="color: #b47aff;">❤️</div>
+                    <h3 class="h5 fw-bold mb-3" style="color: #2d1b4e;">Индивидуальный подход</h3>
+                    <p class="mb-0" style="color: #5a4a6b;">Учитываем все ваши пожелания</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Популярные услуги -->
+<div class="py-5" style="background-color: #f3e8ff;">
+    <div class="container">
+        <h2 class="text-center mb-5" style="color: #2d1b4e; border-bottom: 3px solid #d4b5ff; padding-bottom: 15px;">Популярные услуги</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow h-100">
+                    <div style="height: 200px; background: linear-gradient(45deg, #b47aff, #8a5cd9);" class="card-img-top"></div>
+                    <div class="card-body">
+                        <h3 class="h5 fw-bold mb-2" style="color: #2d1b4e;">Стрижка женская</h3>
+                        <p class="small mb-3" style="color: #5a4a6b;">Модельная стрижка любой сложности</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span style="color: #b47aff; font-weight: bold;">от 2500 ₽</span>
+                            <a href="#" class="btn btn-sm" style="background-color: #e5d0ff; color: #2d1b4e; border: 1px solid #d4b5ff;">Подробнее</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow h-100">
+                    <div style="height: 200px; background: linear-gradient(45deg, #b47aff, #8a5cd9);" class="card-img-top"></div>
+                    <div class="card-body">
+                        <h3 class="h5 fw-bold mb-2" style="color: #2d1b4e;">Маникюр</h3>
+                        <p class="small mb-3" style="color: #5a4a6b;">Комплексный уход за руками</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span style="color: #b47aff; font-weight: bold;">от 1800 ₽</span>
+                            <a href="#" class="btn btn-sm" style="background-color: #e5d0ff; color: #2d1b4e; border: 1px solid #d4b5ff;">Подробнее</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow h-100">
+                    <div style="height: 200px; background: linear-gradient(45deg, #b47aff, #8a5cd9);" class="card-img-top"></div>
+                    <div class="card-body">
+                        <h3 class="h5 fw-bold mb-2" style="color: #2d1b4e;">Окрашивание</h3>
+                        <p class="small mb-3" style="color: #5a4a6b;">Премиальная косметика L'Oreal</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span style="color: #b47aff; font-weight: bold;">от 4000 ₽</span>
+                            <a href="#" class="btn btn-sm" style="background-color: #e5d0ff; color: #2d1b4e; border: 1px solid #d4b5ff;">Подробнее</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Призыв к действию -->
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <h2 class="mb-4" style="color: #2d1b4e;">Готовы преобразиться?</h2>
+            <p class="lead mb-4" style="color: #5a4a6b;">Запишитесь онлайн и получите скидку 10% на первое посещение</p>
+            <a asp-controller="Booking" asp-action="Index" class="btn btn-lg px-5 py-3 rounded-pill" style="background: linear-gradient(135deg, #b47aff, #8a5cd9); color: white; border: none;">
+                Выбрать время
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Отзывы -->
+<div class="py-5" style="background-color: #f3e8ff;">
+    <div class="container">
+        <h2 class="text-center mb-5" style="color: #2d1b4e; border-bottom: 3px solid #d4b5ff; padding-bottom: 15px;">Отзывы наших клиентов</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div style="color: #ffd700; font-size: 1.2rem; margin-bottom: 10px;">★★★★★</div>
+                        <p style="color: #5a4a6b; margin-bottom: 15px;">"Лучший салон в котором я была! Мастера настоящие профессионалы, всегда учитывают пожелания. Атмосфера уютная, чувствуешь себя как дома."</p>
+                        <p style="color: #2d1b4e; font-weight: bold; margin-bottom: 0;">Анна</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div style="color: #ffd700; font-size: 1.2rem; margin-bottom: 10px;">★★★★★</div>
+                        <p style="color: #5a4a6b; margin-bottom: 15px;">"Хожу уже полгода, всегда довольна результатом. Очень удобно записываться онлайн, всегда есть свободные окошки."</p>
+                        <p style="color: #2d1b4e; font-weight: bold; margin-bottom: 0;">Екатерина</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div style="color: #ffd700; font-size: 1.2rem; margin-bottom: 10px;">★★★★★</div>
+                        <p style="color: #5a4a6b; margin-bottom: 15px;">"Прекрасный салон, вежливый персонал, чистота и стерильность. Отдельное спасибо администраторам за приветливость!"</p>
+                        <p style="color: #2d1b4e; font-weight: bold; margin-bottom: 0;">Мария</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Дополнительные стили для главной страницы */
+    .hero-section {
+        position: relative;
+        overflow: hidden;
+    }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.1);
+            transform: skewY(-3deg) translateY(-50%);
+        }
+
+    .card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(180, 122, 255, 0.2) !important;
+        }
+
+    .btn-outline-primary {
+        border-color: #b47aff;
+        color: #b47aff;
+    }
+
+        .btn-outline-primary:hover {
+            background: linear-gradient(135deg, #b47aff, #8a5cd9);
+            border-color: transparent;
+            color: white;
+        }
+
+    .text-primary {
+        color: #b47aff !important;
+    }
+
+    .bg-light {
+        background-color: #f3e8ff !important;
     }
 </style>

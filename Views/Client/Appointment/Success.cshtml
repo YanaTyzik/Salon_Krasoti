@@ -1,0 +1,35 @@
+﻿@page
+@model LisBlanc.AdminPanel.Views.Client.Appointment.SuccessModel
+@{
+    ViewData["Title"] = "Запись оформлена";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card text-center">
+                <div class="card-header bg-success text-white">
+                    <h4>Запись успешно оформлена!</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle text-success" style="font-size: 5rem;"></i>
+                    </div>
+
+                    <h5 class="card-title">Спасибо, @TempData["SuccessMessage"]</h5>
+
+                    <p class="card-text">
+                        Ваша заявка отправлена администратору.<br />
+                        Вы можете посмотреть свои записи в личном кабинете.
+                    </p>
+
+                    <div class="mt-4">
+                        <a href="/" class="btn btn-primary">На главную</a>
+                        <a href="/Client/Profile" class="btn btn-outline-primary">Личный кабинет</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
