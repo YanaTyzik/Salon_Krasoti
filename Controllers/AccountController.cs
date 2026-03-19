@@ -93,7 +93,7 @@ namespace LisBlanc.AdminPanel.Controllers
                 Username = username,
                 PasswordHash = HashPassword(password),
                 Email = email,
-                Role = "Admin"
+                Role = "Client"
             };
 
             _context.Users.Add(user);
