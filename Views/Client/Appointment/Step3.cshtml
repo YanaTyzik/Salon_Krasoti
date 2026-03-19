@@ -6,13 +6,7 @@
 }
 
 <div class="container mt-4">
-    @if (ViewBag.BlockMessage != null)
-    {
-        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-            <i class="fas fa-info-circle"></i> @ViewBag.BlockMessage
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
+    
     <div class="progress mb-4" style="height: 30px;">
         <div class="progress-bar bg-primary" role="progressbar" style="width: 75%;" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">
             Шаг 3 из 4: Выбор времени
@@ -97,11 +91,13 @@
             });
         });
 
-        // Смена даты
-        document.getElementById('datePicker').addEventListener('change', function() {
+               document.getElementById('datePicker').addEventListener('change', function() {
             let date = this.value;
             let masterId = @ViewBag.MasterId;
             let serviceId = @service.Id;
+
+            // Показываем индикатор загрузки
+            document.getElementById('slotsContainer').innerHTML = '<div class="col-12 text-center"><div class="spinner-border text-primary"></div></div>';
 
             fetch(`/Client/Appointment/GetAvailableSlots?masterId=${masterId}&serviceId=${serviceId}&date=${date}`)
                 .then(response => response.json())
@@ -109,39 +105,59 @@
                     let container = document.getElementById('slotsContainer');
                     container.innerHTML = '';
 
-                    if (data.length > 0) {
-                        data.forEach(slot => {
-                            let col = document.createElement('div');
-                            col.className = 'col-md-3 mb-2';
-
-                            let btn = document.createElement('button');
-                            btn.type = 'button';
-                            btn.className = 'btn btn-outline-success w-100 time-slot';
-                            btn.setAttribute('data-time', slot.value);
-                            btn.textContent = slot.time;
-
-                            btn.addEventListener('click', function() {
-                                document.querySelectorAll('.time-slot').forEach(b => {
-                                    b.classList.remove('btn-success');
-                                    b.classList.add('btn-outline-success');
-                                });
-
-                                this.classList.remove('btn-outline-success');
-                                this.classList.add('btn-success');
-
-                                document.getElementById('selectedDateTime').value = this.getAttribute('data-time');
-                                document.getElementById('nextBtn').disabled = false;
-                            });
-
-                            col.appendChild(btn);
-                            container.appendChild(col);
-                        });
-                    } else {
-                        container.innerHTML = '<div class="col-12"><div class="alert alert-warning">На выбранную дату нет свободного времени</div></div>';
+                    // Если есть сообщение (выходной/больничный)
+                    if (data.message) {
+                        container.innerHTML = `
+                            <div class="col-12">
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-info-circle"></i> ${data.message}
+                                </div>
+                            </div>`;
+                        document.getElementById('selectedDateTime').value = '';
+                        document.getElementById('nextBtn').disabled = true;
+                        return;
                     }
 
-                    document.getElementById('selectedDateTime').value = '';
-                    document.getElementById('nextBtn').disabled = true;
+                    // Если нет слотов
+                    if (data.slots.length === 0) {
+                        container.innerHTML = `
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-calendar-times"></i> На выбранную дату нет свободного времени
+                                </div>
+                            </div>`;
+                        document.getElementById('selectedDateTime').value = '';
+                        document.getElementById('nextBtn').disabled = true;
+                        return;
+                    }
+
+                    // Показываем слоты
+                    data.slots.forEach(slot => {
+                        let col = document.createElement('div');
+                        col.className = 'col-md-3 mb-2';
+
+                        let btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'btn btn-outline-success w-100 time-slot';
+                        btn.setAttribute('data-time', slot.value);
+                        btn.textContent = slot.time;
+
+                        btn.addEventListener('click', function() {
+                            document.querySelectorAll('.time-slot').forEach(b => {
+                                b.classList.remove('btn-success');
+                                b.classList.add('btn-outline-success');
+                            });
+
+                            this.classList.remove('btn-outline-success');
+                            this.classList.add('btn-success');
+
+                            document.getElementById('selectedDateTime').value = this.getAttribute('data-time');
+                            document.getElementById('nextBtn').disabled = false;
+                        });
+
+                        col.appendChild(btn);
+                        container.appendChild(col);
+                    });
                 });
         });
     </script>

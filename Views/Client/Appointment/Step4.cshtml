@@ -1,18 +1,31 @@
 ﻿@model CreateAppointmentRequestViewModel
 
 @{
-    ViewData["Title"] = "Запись онлайн - шаг 4";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Шаг 4 - контактные данные";
+    var service = ViewBag.Service as Service;
 }
 
-<div class="container mt-5">
+<div class="container mt-4">
+    <div class="progress mb-4" style="height: 30px;">
+        <div class="progress-bar bg-primary" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+            Шаг 4 из 4: Контактные данные
+        </div>
+    </div>
+
     <div class="row">
         <div class="col-md-8 offset-md-2">
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <h4>Шаг 4 из 4: Ваши контактные данные</h4>
+                    <h4>Введите ваши данные</h4>
                 </div>
                 <div class="card-body">
+
+                    <div class="alert alert-info">
+                        <h5>Вы выбрали:</h5>
+                        <p><strong>Услуга:</strong> @service?.Name</p>
+                        <p><strong>Дата и время:</strong> @Model.SelectedDateTime.ToString("dd.MM.yyyy HH:mm")</p>
+                    </div>
+
                     <form asp-action="Create" method="post">
                         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
@@ -28,17 +41,12 @@
 
                         <div class="mb-3">
                             <label asp-for="ClientPhone" class="form-label"></label>
-                            <input asp-for="ClientPhone" class="form-control" placeholder="+7 (XXX) XXX-XX-XX" />
+                            <input asp-for="ClientPhone" class="form-control" placeholder="+7 (999) 999-99-99" />
                             <span asp-validation-for="ClientPhone" class="text-danger"></span>
                         </div>
 
-                        <div class="alert alert-info">
-                            <strong>Вы выбрали:</strong><br />
-                            <!-- Здесь можно показать выбранные услугу, мастера и время -->
-                        </div>
-
                         <div class="text-center">
-                            <a asp-action="Step3" class="btn btn-secondary">Назад</a>
+                            <a href="javascript:history.back()" class="btn btn-secondary">Назад</a>
                             <button type="submit" class="btn btn-success">Записаться</button>
                         </div>
                     </form>
@@ -49,16 +57,12 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-
+    <partial name="_ValidationScriptsPartial" />
     <script>
-        // Маска для телефона (простая)
+        // Простая маска для телефона
         document.getElementById('ClientPhone').addEventListener('input', function(e) {
             let x = e.target.value.replace(/\D/g, '').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
-            e.target.value = !x[2] ? x[1] :
-                '+7 (' + x[2] + ') ' + x[3] + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
+            e.target.value = !x[2] ? x[1] : '+7 (' + x[2] + ') ' + x[3] + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
         });
     </script>
 }

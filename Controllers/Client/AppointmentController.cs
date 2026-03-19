@@ -156,92 +156,98 @@ namespace LisBlanc.AdminPanel.Controllers.Client
                 return RedirectToAction("Step4");
             }
 
-            // GET: /Client/Appointment/Step4
-            // Шаг 4: Ввод контактных данных
-            public IActionResult Step4()
+        // GET: /Client/Appointment/Step4
+        public async Task<IActionResult> Step4()
+        {
+            if (!TempData.ContainsKey("ServiceId") ||
+                !TempData.ContainsKey("MasterId") ||
+                !TempData.ContainsKey("SelectedDateTime"))
             {
-                if (!TempData.ContainsKey("ServiceId") ||
-                    !TempData.ContainsKey("MasterId") ||
-                    !TempData.ContainsKey("SelectedDateTime"))
+                return RedirectToAction("Step1");
+            }
+
+            int serviceId = (int)TempData["ServiceId"];
+
+            // Загружаем услугу
+            var service = await _context.Services.FindAsync(serviceId);
+            ViewBag.Service = service;  // ← вот это важно!
+
+            var model = new CreateAppointmentRequestViewModel
+            {
+                MasterId = (int)TempData["MasterId"],
+                ServiceId = serviceId,
+                SelectedDateTime = DateTime.Parse(TempData["SelectedDateTime"].ToString())
+            };
+
+            return View("~/Views/Client/Appointment/Step4.cshtml", model);
+        }
+
+        // POST: /Client/Appointment/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(CreateAppointmentRequestViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                // Проверяем, свободно ли ещё это время
+                var (slots, message) = await GetAvailableSlotsWithMessage(model.MasterId, model.ServiceId, model.SelectedDateTime);
+
+                if (!slots.Any())
                 {
-                    return RedirectToAction("Step1");
+                    ModelState.AddModelError("", message ?? "Это время уже занято. Пожалуйста, выберите другое.");
+
+                    // Подгружаем данные для повторного показа формы
+                    var service = await _context.Services.FindAsync(model.ServiceId);
+                    ViewBag.Service = service;
+                    ViewBag.MasterId = model.MasterId;
+                    ViewBag.SelectedDate = model.SelectedDateTime.Date;
+
+                    return View("~/Views/Client/Appointment/Step4.cshtml", model);
                 }
 
-                var model = new CreateAppointmentRequestViewModel
+                // Создаём заявку
+                var appointmentRequest = new AppointmentRequest
                 {
-                    MasterId = (int)TempData["MasterId"],
-                    ServiceId = (int)TempData["ServiceId"],
-                    SelectedDateTime = DateTime.Parse(TempData["SelectedDateTime"].ToString())
+                    MasterId = model.MasterId,
+                    ServiceId = model.ServiceId,
+                    ClientName = model.ClientName,
+                    ClientPhone = model.ClientPhone,
+                    CreatedAt = model.SelectedDateTime,
+                    Status = RequestStatus.Confirmed // Сразу подтверждаем
                 };
 
-                return View(model);
-            }
+                _context.AppointmentRequests.Add(appointmentRequest);
+                await _context.SaveChangesAsync();
 
-            // POST: /Client/Appointment/Create
-            [HttpPost]
-            [ValidateAntiForgeryToken]
-            public async Task<IActionResult> Create(CreateAppointmentRequestViewModel model)
-            {
-                if (ModelState.IsValid)
+                // Создаём слот в расписании
+                var serviceForSlot = await _context.Services.FindAsync(model.ServiceId);
+                var slot = new ScheduleSlot
                 {
-                    // Проверяем, свободно ли ещё это время
-                    bool isAvailable = await CheckAvailability(
-                        model.MasterId,
-                        model.ServiceId,
-                        model.SelectedDateTime);
+                    MasterId = model.MasterId,
+                    StartTime = model.SelectedDateTime,
+                    EndTime = model.SelectedDateTime.AddMinutes(serviceForSlot.DurationMinutes),
+                    Status = SlotStatus.Booked,
+                    AppointmentRequestId = appointmentRequest.Id
+                };
 
-                    if (!isAvailable)
-                    {
-                        ModelState.AddModelError("", "К сожалению, это время уже занято. Пожалуйста, выберите другое.");
-                        return View("Step4", model);
-                    }
+                _context.ScheduleSlots.Add(slot);
+                await _context.SaveChangesAsync();
 
-                    // Создаём заявку
-                    var appointmentRequest = new AppointmentRequest
-                    {
-                        MasterId = model.MasterId,
-                        ServiceId = model.ServiceId,
-                        ClientName = model.ClientName,
-                        ClientPhone = model.ClientPhone,
-                        CreatedAt = model.SelectedDateTime,
-                        Status = RequestStatus.Confirmed // Сразу подтверждаем
-                    };
-
-                    _context.AppointmentRequests.Add(appointmentRequest);
-                    await _context.SaveChangesAsync();
-
-                    // Создаём слот в расписании
-                    var service = await _context.Services.FindAsync(model.ServiceId);
-                    var slot = new ScheduleSlot
-                    {
-                        MasterId = model.MasterId,
-                        StartTime = model.SelectedDateTime,
-                        EndTime = model.SelectedDateTime.AddMinutes(service.DurationMinutes),
-                        Status = SlotStatus.Booked,
-                        AppointmentRequestId = appointmentRequest.Id
-                    };
-
-                    _context.ScheduleSlots.Add(slot);
-                    await _context.SaveChangesAsync();
-
-                    // Если пользователь авторизован, связываем заявку с ним
-                    if (User.Identity.IsAuthenticated && User.IsInRole("Client"))
-                    {
-                        // TODO: Связать заявку с пользователем (если нужно)
-                    }
-
-                    TempData["SuccessMessage"] = "Вы успешно записаны!";
-                    return RedirectToAction("Success");
-                }
-
-                return View("Step4", model);
+                TempData["SuccessMessage"] = "Вы успешно записаны!";
+                return RedirectToAction("Success");
             }
 
-            // GET: /Client/Appointment/Success
-            public IActionResult Success()
-            {
-                return View();
-            }
+            // Если модель невалидна
+            var serviceAgain = await _context.Services.FindAsync(model.ServiceId);
+            ViewBag.Service = serviceAgain;
+            return View("~/Views/Client/Appointment/Step4.cshtml", model);
+        }
+
+        // GET: /Client/Appointment/Success
+        public IActionResult Success()
+        {
+            return View("~/Views/Client/Appointment/Success.cshtml");
+        }
 
         private async Task<List<object>> GetAvailableSlotsInternal(int masterId, int serviceId, DateTime date)
         {
@@ -345,11 +351,20 @@ namespace LisBlanc.AdminPanel.Controllers.Client
         private async Task<(List<object> slots, string message)> GetAvailableSlotsWithMessage(int masterId, int serviceId, DateTime date)
         {
             var service = await _context.Services.FindAsync(serviceId);
-            if (service == null) return (new List<object>(), null);
+            if (service == null) return (new List<object>(), "Услуга не найдена");
 
             var startOfDay = date.Date;
             var endOfDay = startOfDay.AddDays(1).AddTicks(-1);
 
+            // Получаем занятые слоты (брони)
+            var busySlots = await _context.ScheduleSlots
+                .Where(s => s.MasterId == masterId
+                    && s.StartTime >= startOfDay
+                    && s.StartTime <= endOfDay
+                    && s.Status == SlotStatus.Booked)
+                .ToListAsync();
+
+            // Получаем слоты блокировок (выходные, больничные, отпуск)
             var dayOffSlots = await _context.ScheduleSlots
                 .Where(s => s.MasterId == masterId
                     && s.StartTime >= startOfDay
@@ -359,6 +374,46 @@ namespace LisBlanc.AdminPanel.Controllers.Client
                         || s.Status == SlotStatus.Vacation))
                 .ToListAsync();
 
+            // Генерируем все возможные слоты с 9 до 21
+            var availableSlots = new List<object>();
+            var currentTime = startOfDay.AddHours(9);
+
+            while (currentTime < startOfDay.AddHours(21))
+            {
+                var slotEnd = currentTime.AddMinutes(service.DurationMinutes);
+
+                if (slotEnd > startOfDay.AddHours(21))
+                    break;
+
+                // Проверяем, не занят ли слот
+                bool isBusy = busySlots.Any(s =>
+                    (currentTime >= s.StartTime && currentTime < s.EndTime) ||
+                    (slotEnd > s.StartTime && slotEnd <= s.EndTime) ||
+                    (s.StartTime >= currentTime && s.StartTime < slotEnd));
+
+                // Проверяем, не попадает ли на блокировку
+                bool isDayOff = dayOffSlots.Any(s =>
+                    currentTime >= s.StartTime && slotEnd <= s.EndTime);
+
+                if (!isBusy && !isDayOff)
+                {
+                    availableSlots.Add(new
+                    {
+                        time = currentTime.ToString("HH:mm"),
+                        value = currentTime.ToString("yyyy-MM-dd HH:mm:ss")
+                    });
+                }
+
+                currentTime = currentTime.AddMinutes(30);
+            }
+
+            // Если слоты есть — возвращаем их, даже если есть блокировки
+            if (availableSlots.Any())
+            {
+                return (availableSlots, null);
+            }
+
+            // Если слотов нет, проверяем, есть ли блокировка на весь день
             var fullDayOff = dayOffSlots.FirstOrDefault(s => s.StartTime <= startOfDay && s.EndTime >= endOfDay);
             if (fullDayOff != null)
             {
@@ -372,16 +427,22 @@ namespace LisBlanc.AdminPanel.Controllers.Client
                 return (new List<object>(), message);
             }
 
-            var slots = await GetAvailableSlotsInternal(masterId, serviceId, date);
-            return (slots, null);
-
-
+            // Если нет ни слотов, ни блокировок
+            return (new List<object>(), "Нет свободного времени");
         }
 
+        [HttpGet]
+        [Route("/Client/Appointment/GetAvailableSlots")]
         public async Task<IActionResult> GetAvailableSlots(int masterId, int serviceId, DateTime date)
         {
-            var (slots, _) = await GetAvailableSlotsWithMessage(masterId, serviceId, date);
-            return Json(slots);
+            var (slots, message) = await GetAvailableSlotsWithMessage(masterId, serviceId, date);
+
+            // Возвращаем и слоты, и сообщение
+            return Json(new
+            {
+                slots = slots,
+                message = message
+            });
         }
 
         private async Task<bool> MasterHasAvailableSlots(int masterId, int serviceId, int daysAhead = 7)
@@ -402,6 +463,7 @@ namespace LisBlanc.AdminPanel.Controllers.Client
             }
 
             return false; // Нет свободных слотов
+
         }
     }
 }

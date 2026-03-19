@@ -16,12 +16,12 @@ namespace LisBlanc.AdminPanel.Models
         public int ServiceId { get; set; }
 
         // Имя клиента
-        [Required]
+        [Required(ErrorMessage = "Введите ваше имя")]
         [Display(Name = "Имя клиента")]
         public string ClientName { get; set; }
 
         // Телефон клиента
-        [Required]
+        [Required(ErrorMessage = "Введите номер телефона")]
         [Display(Name = "Телефон клиента")]
         public string ClientPhone { get; set; }
 
