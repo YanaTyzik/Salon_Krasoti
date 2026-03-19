@@ -1,0 +1,284 @@
+﻿@{
+    ViewData["Title"] = "Личный кабинет";
+    var upcoming = ViewBag.Upcoming as IEnumerable<AppointmentRequest>;
+    var past = ViewBag.Past as IEnumerable<AppointmentRequest>;
+    var currentTab = ViewBag.CurrentTab as string;
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <!-- Левая колонка - профиль и меню -->
+        <div class="col-md-4">
+            <!-- Карточка профиля -->
+            <div class="card profile-card mb-4">
+                <div class="card-body text-center">
+                    <div class="avatar-circle mx-auto mb-3">
+                        <span class="avatar-initials">@User.Identity.Name?.Substring(0, 1).ToUpper()</span>
+                    </div>
+                    <h4>@User.Identity.Name</h4>
+                    <p class="text-muted">Клиент</p>
+                    <p class="text-muted small">
+                        <i class="far fa-calendar-alt"></i> Дата регистрации: 28.12.2021
+                    </p>
+                </div>
+            </div>
+
+            <!-- Овальное меню -->
+            <div class="menu-oval">
+                <a href="@Url.Action("Index", new { tab = "upcoming" })"
+                   class="menu-item @(currentTab == "upcoming" ? "active" : "")">
+                    <i class="fas fa-calendar-check"></i> Предстоящие записи
+                </a>
+                <a href="@Url.Action("Index", new { tab = "history" })"
+                   class="menu-item @(currentTab == "history" ? "active" : "")">
+                    <i class="fas fa-history"></i> История
+                </a>
+                <a href="@Url.Action("Index", new { tab = "settings" })"
+                   class="menu-item @(currentTab == "settings" ? "active" : "")">
+                    <i class="fas fa-user-cog"></i> Настройки
+                </a>
+            </div>
+        </div>
+
+        <!-- Правая колонка - контент -->
+        <div class="col-md-8">
+            <div class="content-card">
+                @if (currentTab == "upcoming")
+                {
+                    <h3>Предстоящие записи</h3>
+                    if (upcoming.Any())
+                    {
+                        foreach (var item in upcoming)
+                        {
+                            <div class="appointment-card">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <h5>@item.Service?.Name</h5>
+                                        <p class="mb-1">
+                                            <i class="far fa-clock"></i> @item.CreatedAt.ToString("dd.MM.yyyy HH:mm")
+                                        </p>
+                                        <p class="mb-1">
+                                            <i class="fas fa-user"></i> @item.Master?.FullName
+                                        </p>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <span class="status-badge status-@item.Status.ToString().ToLower()">
+                                            @(item.Status == RequestStatus.Confirmed ? "Подтверждена" :
+                                                                            item.Status == RequestStatus.New ? "Ожидает" : "Отменена")
+                            </span>
+                            @if (item.CreatedAt > DateTime.Now && item.Status != RequestStatus.Rejected)
+                                        {
+                                            <form asp-action="Cancel" method="post" class="mt-2">
+                                                <input type="hidden" name="id" value="@item.Id" />
+                                                <button type="submit" class="btn btn-outline-danger btn-sm"
+                                                        onclick="return confirm('Отменить запись?')">
+                                                    Отменить
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted">У вас нет предстоящих записей</p>
+                    }
+                }
+                else if (currentTab == "history")
+                {
+                    <h3>История посещений</h3>
+                    if (past.Any())
+                    {
+                        foreach (var item in past)
+                        {
+                            <div class="appointment-card">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <h5>@item.Service?.Name</h5>
+                                        <p class="mb-1">
+                                            <i class="far fa-clock"></i> @item.CreatedAt.ToString("dd.MM.yyyy HH:mm")
+                                        </p>
+                                        <p class="mb-1">
+                                            <i class="fas fa-user"></i> @item.Master?.FullName
+                                        </p>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <span class="status-badge status-@item.Status.ToString().ToLower()">
+                                            @(item.Status == RequestStatus.Confirmed ? "Завершена" :
+                                                                            item.Status == RequestStatus.Rejected ? "Отменена" : "Ожидает")
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                                }
+                    }
+                    else
+                    {
+                        <p class="text-muted">История посещений пуста</p>
+                    }
+                }
+                else if (currentTab == "settings")
+                {
+                    <h3>Настройки профиля</h3>
+                    <form asp-action="UpdateProfile" method="post">
+                        <div class="mb-3">
+                            <label class="form-label">Имя</label>
+                            <input type="text" class="form-control" name="name" value="@User.Identity.Name" readonly />
+                            <small class="text-muted">Имя совпадает с телефоном</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Телефон</label>
+                            <input type="tel" class="form-control" name="phone" value="@User.Identity.Name" readonly />
+                            <small class="text-muted">Телефон используется для входа</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" placeholder="Введите email" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Новый пароль</label>
+                            <input type="password" class="form-control" name="newPassword" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Подтверждение пароля</label>
+                            <input type="password" class="form-control" name="confirmPassword" />
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    <style>
+        /* Профиль */
+        .profile-card {
+            border-radius: 20px;
+            border: none;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .avatar-circle {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .avatar-initials {
+            font-size: 40px;
+            color: white;
+            font-weight: bold;
+        }
+
+        /* Овальное меню */
+        .menu-oval {
+            background: white;
+            border-radius: 50px;
+            padding: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .menu-item {
+            padding: 12px 20px;
+            border-radius: 40px;
+            color: #666;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: block;
+        }
+
+            .menu-item:hover {
+                background: #f0f0f0;
+                color: #333;
+                transform: translateX(5px);
+            }
+
+            .menu-item.active {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+            }
+
+            .menu-item i {
+                margin-right: 10px;
+                width: 20px;
+            }
+
+        /* Контент */
+        .content-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .appointment-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+
+            .appointment-card:hover {
+                transform: translateX(5px);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .status-confirmed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-new {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+
+@section Scripts {
+    <script src="https://kit.fontawesome.com/your-code.js" crossorigin="anonymous"></script>
+}

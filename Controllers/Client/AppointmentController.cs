@@ -187,6 +187,7 @@ namespace LisBlanc.AdminPanel.Controllers.Client
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreateAppointmentRequestViewModel model)
         {
+
             if (ModelState.IsValid)
             {
                 // Проверяем, свободно ли ещё это время
