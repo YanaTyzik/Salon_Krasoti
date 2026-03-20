@@ -1,0 +1,164 @@
+﻿@{
+    ViewData["Title"] = "Шаг 3 - выбор времени";
+    var service = ViewBag.Service as LisBlanc.AdminPanel.Models.Service;
+    var selectedDate = (DateTime)ViewBag.SelectedDate;
+    var availableSlots = ViewBag.AvailableSlots as List<object>;
+}
+
+<div class="container mt-4">
+    
+    <div class="progress mb-4" style="height: 30px;">
+        <div class="progress-bar bg-primary" role="progressbar" style="width: 75%;" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">
+            Шаг 3 из 4: Выбор времени
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4>Выберите удобное время</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <strong>Услуга:</strong> @service.Name <br />
+                        <strong>Длительность:</strong> @service.DurationMinutes минут
+                    </div>
+
+                    <!-- Выбор даты -->
+                    <div class="mb-4">
+                        <label for="datePicker" class="form-label">Выберите дату:</label>
+                        <input type="date" id="datePicker" class="form-control"
+                               value="@selectedDate.ToString("yyyy-MM-dd")" />
+                    </div>
+
+                    <!-- Свободные слоты -->
+                    <div id="slotsContainer" class="row">
+                        @if (availableSlots != null && availableSlots.Any())
+                        {
+                            foreach (var slot in availableSlots)
+                            {
+                                <div class="col-md-3 mb-2">
+                                    <button type="button"
+                                            class="btn btn-outline-success w-100 time-slot"
+                                            data-time="@slot.GetType().GetProperty("value")?.GetValue(slot)">
+                                        @slot.GetType().GetProperty("time")?.GetValue(slot)
+                                    </button>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="col-12">
+                                <div class="alert alert-warning">
+                                    На выбранную дату нет свободного времени
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <form asp-action="Step3" method="post" id="timeForm">
+                        <input type="hidden" name="selectedDateTime" id="selectedDateTime" value="" />
+
+                        <div class="text-center mt-4">
+                            <a href="javascript:history.back()" class="btn btn-secondary">Назад</a>
+                            <button type="submit" class="btn btn-primary" id="nextBtn" disabled>
+                                Далее
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Выбор временного слота
+        document.querySelectorAll('.time-slot').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.time-slot').forEach(b => {
+                    b.classList.remove('btn-success');
+                    b.classList.add('btn-outline-success');
+                });
+
+                this.classList.remove('btn-outline-success');
+                this.classList.add('btn-success');
+
+                document.getElementById('selectedDateTime').value = this.getAttribute('data-time');
+                document.getElementById('nextBtn').disabled = false;
+            });
+        });
+
+               document.getElementById('datePicker').addEventListener('change', function() {
+            let date = this.value;
+            let masterId = @ViewBag.MasterId;
+            let serviceId = @service.Id;
+
+            // Показываем индикатор загрузки
+            document.getElementById('slotsContainer').innerHTML = '<div class="col-12 text-center"><div class="spinner-border text-primary"></div></div>';
+
+            fetch(`/Client/Appointment/GetAvailableSlots?masterId=${masterId}&serviceId=${serviceId}&date=${date}`)
+                .then(response => response.json())
+                .then(data => {
+                    let container = document.getElementById('slotsContainer');
+                    container.innerHTML = '';
+
+                    // Если есть сообщение (выходной/больничный)
+                    if (data.message) {
+                        container.innerHTML = `
+                            <div class="col-12">
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-info-circle"></i> ${data.message}
+                                </div>
+                            </div>`;
+                        document.getElementById('selectedDateTime').value = '';
+                        document.getElementById('nextBtn').disabled = true;
+                        return;
+                    }
+
+                    // Если нет слотов
+                    if (data.slots.length === 0) {
+                        container.innerHTML = `
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-calendar-times"></i> На выбранную дату нет свободного времени
+                                </div>
+                            </div>`;
+                        document.getElementById('selectedDateTime').value = '';
+                        document.getElementById('nextBtn').disabled = true;
+                        return;
+                    }
+
+                    // Показываем слоты
+                    data.slots.forEach(slot => {
+                        let col = document.createElement('div');
+                        col.className = 'col-md-3 mb-2';
+
+                        let btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'btn btn-outline-success w-100 time-slot';
+                        btn.setAttribute('data-time', slot.value);
+                        btn.textContent = slot.time;
+
+                        btn.addEventListener('click', function() {
+                            document.querySelectorAll('.time-slot').forEach(b => {
+                                b.classList.remove('btn-success');
+                                b.classList.add('btn-outline-success');
+                            });
+
+                            this.classList.remove('btn-outline-success');
+                            this.classList.add('btn-success');
+
+                            document.getElementById('selectedDateTime').value = this.getAttribute('data-time');
+                            document.getElementById('nextBtn').disabled = false;
+                        });
+
+                        col.appendChild(btn);
+                        container.appendChild(col);
+                    });
+                });
+        });
+    </script>
+}

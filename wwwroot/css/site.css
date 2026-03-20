@@ -450,3 +450,60 @@ a {
         transform: scale(1.05);
         display: inline-block;
     }
+
+/* Карточки услуг */
+.service-card {
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+    .service-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        border-color: #0d6efd;
+    }
+
+    .service-card.selected {
+        border: 3px solid #0d6efd;
+        background-color: #f0f7ff;
+    }
+
+    .service-card .card-body {
+        padding: 20px;
+    }
+
+    .service-card .card-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: #333;
+    }
+
+    .service-card .card-text {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+    }
+
+    .service-card .price {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #0d6efd;
+    }
+
+    .service-card .duration {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+    .service-card .badge-category {
+        background-color: #e9ecef;
+        color: #495057;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+    }
