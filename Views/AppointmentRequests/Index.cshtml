@@ -6,11 +6,12 @@
 
 <h1>Входящие заявки на запись</h1>
 
-<p>
-    <a asp-action="Create" class="btn btn-primary">
-        Создать новую заявку
-    </a>
-</p>
+@if (User.IsInRole("Admin"))
+{
+    <p>
+        <a asp-action="Create" class="btn btn-primary">Создать новую заявку</a>
+    </p>
+}</p>
 
 <table class="table table-striped">
     <thead>

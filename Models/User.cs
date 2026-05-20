@@ -19,6 +19,6 @@ namespace LisBlanc.AdminPanel.Models
         public string? Email { get; set; }
 
         [Display(Name = "Роль")]
-        public string Role { get; set; } = "Admin"; // Пока только админы
+        public string Role { get; set; } = "Client"; // Пока только админы
     }
 }

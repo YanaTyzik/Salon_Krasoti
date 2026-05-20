@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace LisBlanc.AdminPanel.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin,Manager")]
     public class MastersController : Controller
     {
         private readonly ApplicationDbContext _context;

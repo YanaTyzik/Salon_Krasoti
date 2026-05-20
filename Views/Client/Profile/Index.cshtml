@@ -33,7 +33,7 @@
                     <h4>@User.Identity.Name</h4>
                     <p class="text-muted">Клиент</p>
                     <p class="text-muted small">
-                        <i class="far fa-calendar-alt"></i> Дата регистрации: 28.12.2021
+                        <i class="far fa-calendar-alt"></i> Дата регистрации: @DateTime.Now.ToString("dd.MM.yyyy")
                     </p>
                 </div>
             </div>
@@ -136,42 +136,38 @@
                 }
                 else if (currentTab == "settings")
                 {
-                    <h3>Настройки профиля</h3>
-                    <form asp-action="UpdateProfile" method="post">
-                        <div class="mb-3">
-                            <label class="form-label">Имя</label>
-                            <input type="text" class="form-control" name="name" value="@User.Identity.Name" readonly />
-                            <small class="text-muted">Имя совпадает с телефоном</small>
-                        </div>
+                    <div class="card-body">
+                        <h3>Настройки профиля</h3>
+                        <form asp-action="UpdateProfile" method="post">
+                            <div class="mb-3">
+                                <label class="form-label">Имя</label>
+                                <input type="text" class="form-control" name="name" value="@User.Identity.Name" readonly />
+                            </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Телефон</label>
-                            <input type="tel" class="form-control" name="phone" value="@User.Identity.Name" readonly />
-                            <small class="text-muted">Телефон используется для входа</small>
-                        </div>
+                            <div class="mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" name="email" placeholder="Введите email" value="@ViewBag.UserEmail" />
+                            </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" class="form-control" name="email" placeholder="Введите email" />
-                        </div>
+                            <div class="mb-3">
+                                <label class="form-label">Новый пароль</label>
+                                <input type="password" class="form-control" name="newPassword" placeholder="Введите новый пароль" />
+                            </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Новый пароль</label>
-                            <input type="password" class="form-control" name="newPassword" />
-                        </div>
+                            <div class="mb-3">
+                                <label class="form-label">Подтверждение пароля</label>
+                                <input type="password" class="form-control" name="confirmPassword" placeholder="Подтвердите новый пароль" />
+                            </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Подтверждение пароля</label>
-                            <input type="password" class="form-control" name="confirmPassword" />
-                        </div>
-
-                        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
-                    </form>
+                            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                        </form>
+                    </div>
                 }
             </div>
         </div>
     </div>
 </div>
+
 
 
     <style>

@@ -5,10 +5,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using System.Text;
+using System.Security.Claims;
 
 namespace LisBlanc.AdminPanel.Controllers.Client
 {
-    
+    [Authorize]
     public class ProfileController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -28,11 +29,26 @@ namespace LisBlanc.AdminPanel.Controllers.Client
                 return RedirectToAction("Login", "Account");
             }
 
-            var appointments = await _context.AppointmentRequests
-     .Include(a => a.Master)
-     .Include(a => a.Service)
-     .Where(a => a.ClientPhone == phone)
-     .ToListAsync();
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            var isAdminOrManager = userRole == "Admin" || userRole == "Manager";
+
+            IQueryable<AppointmentRequest> query;
+
+            if (isAdminOrManager)
+            {
+                query = _context.AppointmentRequests
+                    .Include(a => a.Master)
+                    .Include(a => a.Service);
+            }
+            else
+            {
+                query = _context.AppointmentRequests
+                    .Include(a => a.Master)
+                    .Include(a => a.Service)
+                    .Where(a => a.ClientPhone == phone);
+            }
+
+            var appointments = await query.ToListAsync();
 
             Console.WriteLine($"Найдено записей: {appointments.Count}");
 
@@ -47,11 +63,11 @@ namespace LisBlanc.AdminPanel.Controllers.Client
                 .ToList();
 
             ViewBag.CurrentTab = tab;
+            ViewBag.UserRole = userRole;
 
             return View("~/Views/Client/Profile/Index.cshtml");
         }
 
-        // POST: /Client/Profile/Cancel/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Cancel(int id)
@@ -65,24 +81,42 @@ namespace LisBlanc.AdminPanel.Controllers.Client
                 return NotFound();
             }
 
-            // Проверяем, что это запись текущего клиента
-            if (appointment.ClientPhone != User.Identity.Name)
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            var phone = User.Identity.Name;
+
+            bool canCancel = false;
+
+            if (userRole == "Admin" || userRole == "Manager")
+            {
+                canCancel = true;
+            }
+            else if (appointment.ClientPhone == phone)
+            {
+                canCancel = true;
+            }
+
+            if (!canCancel)
             {
                 return Forbid();
             }
 
-            // Проверяем, можно ли отменить (не прошло ли уже время)
-            if (appointment.CreatedAt <= DateTime.Now)
+            if (appointment.CreatedAt <= DateTime.Now && userRole != "Admin")
             {
                 TempData["Error"] = "Нельзя отменить прошедшую запись";
                 return RedirectToAction(nameof(Index));
             }
 
-            // Меняем статус заявки
             appointment.Status = RequestStatus.Rejected;
-            appointment.RejectionReason = "Отменено клиентом";
 
-            // Удаляем слот из расписания
+            if (userRole == "Admin" || userRole == "Manager")
+            {
+                appointment.RejectionReason = "Отменено администратором";
+            }
+            else
+            {
+                appointment.RejectionReason = "Отменено клиентом";
+            }
+
             var slot = await _context.ScheduleSlots
                 .FirstOrDefaultAsync(s => s.AppointmentRequestId == id);
 
@@ -108,13 +142,11 @@ namespace LisBlanc.AdminPanel.Controllers.Client
                 return NotFound();
             }
 
-            // Обновляем email, если ввели
             if (!string.IsNullOrEmpty(email))
             {
                 user.Email = email;
             }
 
-            // Обновляем пароль, если ввели
             if (!string.IsNullOrEmpty(newPassword))
             {
                 if (newPassword != confirmPassword)
