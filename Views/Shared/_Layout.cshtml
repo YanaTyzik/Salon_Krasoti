@@ -12,51 +12,68 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm">
             <div class="container-fluid">
-                <!-- Используем container-fluid вместо container -->
                 <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Lis Blanc</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Главная</a>
-                        </li>
+                        @if (!User.IsInRole("Admin,Manager"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Главная</a>
+                            </li>
+                        }
 
                         @if (User.Identity.IsAuthenticated)
                         {
                             if (User.IsInRole("Admin"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="Admin" asp-controller="Masters" asp-action="Index">Мастера</a>
+                                    <a class="nav-link text-dark" asp-controller="Masters" asp-action="Index">Мастера</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="Admin" asp-controller="Services" asp-action="Index">Услуги</a>
-								</li>
-								<li class="nav-item">
-									<a class="nav-link text-dark" asp-area="Admin" asp-controller="Schedule" asp-action="Index">Расписание</a>
-								</li>
+                                    <a class="nav-link text-dark" asp-controller="Services" asp-action="Index">Услуги</a>
+                                </li>
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="Admin" asp-controller="AppointmentRequests" asp-action="Index">Заявки</a>
-								</li>
+                                    <a class="nav-link text-dark" asp-controller="Schedule" asp-action="Index">Расписание</a>
+                                </li>
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-controller="Users" asp-action="Index">Пользователи</a>  
+                                    <a class="nav-link text-dark" asp-controller="AppointmentRequests" asp-action="Index">Заявки</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Users" asp-action="Index">Пользователи</a>
+                                </li>
+                            }
+                            else if (User.IsInRole("Manager"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Masters" asp-action="Index">Мастера</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Services" asp-action="Index">Услуги</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Schedule" asp-action="Index">Расписание</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="AppointmentRequests" asp-action="Index">Заявки</a>
                                 </li>
                             }
                             else if (User.IsInRole("Client"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="Client" asp-controller="Profile" asp-action="Index">Личный кабинет</a>
+                                    <a class="nav-link text-dark" asp-controller="Profile" asp-action="Index">Личный кабинет</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-controller="Appointment" asp-action="Step1">Записаться</a>
+                                    <a class="nav-link text-dark" asp-controller="Appointment" asp-action="Step1">Записаться</a>
                                 </li>
                             }
                         }
                         else
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Appointment" asp-action="Step1">Записаться</a>
+                                <a class="nav-link text-dark" asp-controller="Appointment" asp-action="Step1">Записаться</a>
                             </li>
                         }
                     </ul>

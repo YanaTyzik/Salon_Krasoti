@@ -123,23 +123,6 @@
         font-size: 0.9em;
     }
 
-    .slot-booked {
-        background-color: #d4edda;
-        cursor: pointer;
-    }
-
-    .slot-dayoff {
-        background-color: #fff3cd;
-    }
-
-    .slot-sickleave {
-        background-color: #f8d7da;
-    }
-
-    .slot-vacation {
-        background-color: #d1ecf1;
-    }
-
     .free-slot {
         background-color: #f8f9fa;
     }
@@ -151,16 +134,15 @@
         font-weight: 600;
     }
 </style>
-
 @functions {
     string GetSlotClass(ScheduleSlot slot)
     {
         return slot.Status switch
         {
-            SlotStatus.Booked => "slot-booked",
-            SlotStatus.DayOff => "slot-dayoff",
-            SlotStatus.SickLeave => "slot-sickleave",
-            SlotStatus.Vacation => "slot-vacation",
+            SlotStatus.Booked => "bg-success bg-opacity-25",
+            SlotStatus.DayOff => "bg-warning bg-opacity-25",
+            SlotStatus.SickLeave => "bg-danger bg-opacity-25",
+            SlotStatus.Vacation => "bg-info bg-opacity-25",
             _ => ""
         };
     }

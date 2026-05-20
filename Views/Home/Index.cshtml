@@ -86,40 +86,40 @@
         <h2 class="text-center mb-5" style="color: #2d1b4e; border-bottom: 3px solid #d4b5ff; padding-bottom: 15px;">Популярные услуги</h2>
         <div class="row g-4">
             <div class="col-md-4">
-                <div class="card border-0 shadow h-100">
+                <div class="card border-0 shadow h-100 service-card" data-service-name="Стрижка женская">
                     <div style="height: 200px; background: linear-gradient(45deg, #b47aff, #8a5cd9);" class="card-img-top"></div>
                     <div class="card-body">
                         <h3 class="h5 fw-bold mb-2" style="color: #2d1b4e;">Стрижка женская</h3>
                         <p class="small mb-3" style="color: #5a4a6b;">Модельная стрижка любой сложности</p>
                         <div class="d-flex justify-content-between align-items-center">
                             <span style="color: #b47aff; font-weight: bold;">от 2500 ₽</span>
-                            <a href="#" class="btn btn-sm" style="background-color: #e5d0ff; color: #2d1b4e; border: 1px solid #d4b5ff;">Попробовать</a>
+                            <button type="button" class="btn btn-sm try-btn" style="background-color: #e5d0ff; color: #2d1b4e; border: 1px solid #d4b5ff;">Попробовать</button>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card border-0 shadow h-100">
+                <div class="card border-0 shadow h-100 service-card" data-service-name="Маникюр">
                     <div style="height: 200px; background: linear-gradient(45deg, #b47aff, #8a5cd9);" class="card-img-top"></div>
                     <div class="card-body">
                         <h3 class="h5 fw-bold mb-2" style="color: #2d1b4e;">Маникюр</h3>
                         <p class="small mb-3" style="color: #5a4a6b;">Комплексный уход за руками</p>
                         <div class="d-flex justify-content-between align-items-center">
                             <span style="color: #b47aff; font-weight: bold;">от 1800 ₽</span>
-                            <a href="#" class="btn btn-sm" style="background-color: #e5d0ff; color: #2d1b4e; border: 1px solid #d4b5ff;">Попробовать</a>
+                            <button type="button" class="btn btn-sm try-btn" style="background-color: #e5d0ff; color: #2d1b4e; border: 1px solid #d4b5ff;">Попробовать</button>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card border-0 shadow h-100">
+                <div class="card border-0 shadow h-100 service-card" data-service-name="Окрашивание">
                     <div style="height: 200px; background: linear-gradient(45deg, #b47aff, #8a5cd9);" class="card-img-top"></div>
                     <div class="card-body">
                         <h3 class="h5 fw-bold mb-2" style="color: #2d1b4e;">Окрашивание</h3>
                         <p class="small mb-3" style="color: #5a4a6b;">Премиальная косметика L'Oreal</p>
                         <div class="d-flex justify-content-between align-items-center">
                             <span style="color: #b47aff; font-weight: bold;">от 4000 ₽</span>
-                            <a href="#" class="btn btn-sm" style="background-color: #e5d0ff; color: #2d1b4e; border: 1px solid #d4b5ff;">Попробовать</a>
+                            <button type="button" class="btn btn-sm try-btn" style="background-color: #e5d0ff; color: #2d1b4e; border: 1px solid #d4b5ff;">Попробовать</button>
                         </div>
                     </div>
                 </div>
@@ -178,6 +178,21 @@
 </div>
 
 <style>
+    /* Анимация подсветки кнопки */
+    html {
+        scroll-behavior: smooth;
+    }
+
+    .highlight-book-btn {
+        animation: pulse 0.6s ease-in-out 5 !important;
+        background: linear-gradient(135deg, #b47aff, #8a5cd9) !important;
+        color: white !important;
+        border: none !important;
+
+    /* Плавный скролл */
+    html {
+        scroll-behavior: smooth;
+    }
     /* Дополнительные стили для главной страницы */
     .hero-section {
         position: relative;
@@ -223,3 +238,50 @@
         background-color: #f3e8ff !important;
     }
 </style>
+<script>
+    document.querySelectorAll('.try-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            var bookBtn = document.querySelector('.btn-primary.btn-lg');
+            if (!bookBtn) {
+                bookBtn = document.querySelector('a[href="/Appointment/Step1"]');
+            }
+            if (!bookBtn) {
+                bookBtn = document.querySelector('a[href*="Appointment"]');
+            }
+
+            if (bookBtn) {
+                bookBtn.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+
+                var originalBg = bookBtn.style.background;
+                var originalColor = bookBtn.style.color;
+                var originalTransform = bookBtn.style.transform;
+
+                var count = 0;
+                var interval = setInterval(function() {
+                    if (count % 2 === 0) {
+                        bookBtn.style.transform = 'scale(1.1)';
+                        bookBtn.style.background = 'linear-gradient(135deg, #b47aff, #8a5cd9)';
+                        bookBtn.style.color = 'white';
+                    } else {
+                        bookBtn.style.transform = 'scale(1)';
+                        bookBtn.style.background = originalBg;
+                        bookBtn.style.color = originalColor;
+                    }
+                    count++;
+                }, 200);
+
+                setTimeout(function() {
+                    clearInterval(interval);
+                    bookBtn.style.transform = '';
+                    bookBtn.style.background = '';
+                    bookBtn.style.color = '';
+                }, 3000);
+            }
+        });
+    });
+</script>

@@ -35,31 +35,24 @@ namespace LisBlanc.AdminPanel.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Username,Email,Role")] User user)
+        public async Task<IActionResult> Edit(int id, IFormCollection form)
         {
-            if (id != user.Id) return NotFound();
+            var user = await _context.Users.FindAsync(id);
+            if (user == null) return NotFound();
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    var existingUser = await _context.Users.FindAsync(id);
-                    if (existingUser == null) return NotFound();
+            var newRole = form["Role"].ToString();
+            var newEmail = form["Email"].ToString();
 
-                    existingUser.Email = user.Email;
-                    existingUser.Role = user.Role;
+            if (string.IsNullOrEmpty(newRole)) return View(user);
 
-                    await _context.SaveChangesAsync();
-                    TempData["Success"] = "Данные пользователя обновлены";
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!_context.Users.Any(e => e.Id == id)) return NotFound();
-                    throw;
-                }
-                return RedirectToAction(nameof(Index)); 
-            }
-            return View(user);
+            user.Role = newRole;
+            user.Email = newEmail;
+
+            _context.Entry(user).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Данные пользователя успешно обновлены";
+            return RedirectToAction(nameof(Index));
         }
 
         [HttpPost, ActionName("Delete")]
@@ -73,9 +66,12 @@ namespace LisBlanc.AdminPanel.Controllers
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "Пользователь удалён";
             }
+            else if (user?.Role == "Admin")
+            {
+                TempData["Error"] = "Нельзя удалить администратора";
+            }
             return RedirectToAction(nameof(Index));
         }
     }
 }
-
 
