@@ -4,6 +4,7 @@ namespace LisBlanc.AdminPanel.Models
 {
     public class ScheduleSlot
     {
+
             [Key]
             public int Id { get; set; }
 
