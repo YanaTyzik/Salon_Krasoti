@@ -13,8 +13,18 @@ namespace LisBlanc.AdminPanel.Controllers
             _logger = logger;
         }
 
+
         public IActionResult Index()
         {
+            if (User.IsInRole("Admin"))
+            {
+                return RedirectToAction("Index", "Users");
+            }
+            if (User.IsInRole("Manager"))
+            {
+                return RedirectToAction("Index", "Schedule");
+            }
+            
             return View();
         }
 
