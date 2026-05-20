@@ -108,6 +108,33 @@ namespace LisBlanc.AdminPanel.Controllers
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login");
         }
+        // GET: /Account/InitAdmin
+        [HttpGet]
+        public async Task<IActionResult> InitAdmin()
+        {
+            // Проверяем, есть ли хоть один админ
+            var adminExists = await _context.Users.AnyAsync(u => u.Role == "Admin");
+
+            if (!adminExists)
+            {
+                var admin = new User
+                {
+                    Username = "admin",
+                    PasswordHash = HashPassword("admin123"),
+                    Email = "admin@lisblanc.ru",
+                    Role = "Admin"
+                };
+                _context.Users.Add(admin);
+                await _context.SaveChangesAsync();
+                ViewBag.Message = "Администратор создан: логин 'admin', пароль 'admin123'";
+            }
+            else
+            {
+                ViewBag.Message = "Администратор уже существует";
+            }
+
+            return View();
+        }
 
         // Вспомогательный метод для хеширования пароля
         private string HashPassword(string password)

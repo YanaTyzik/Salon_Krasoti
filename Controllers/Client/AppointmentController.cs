@@ -2,12 +2,14 @@
 using global::LisBlanc.AdminPanel.Models;
 using LisBlanc.AdminPanel.Data;
 using LisBlanc.AdminPanel.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace LisBlanc.AdminPanel.Controllers.Client
 {
-        public class AppointmentController : Controller
+    [Authorize(Roles = "Client")]
+    public class AppointmentController : Controller
         {
             private readonly ApplicationDbContext _context;
 

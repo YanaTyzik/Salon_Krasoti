@@ -6,7 +6,7 @@ using LisBlanc.AdminPanel.Models;
 
 namespace LisBlanc.AdminPanel.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin,Manager")]
     public class ScheduleController : Controller
     {
         private readonly ApplicationDbContext _context;
