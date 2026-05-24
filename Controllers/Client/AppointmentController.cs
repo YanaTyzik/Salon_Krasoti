@@ -5,18 +5,19 @@ using LisBlanc.AdminPanel.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace LisBlanc.AdminPanel.Controllers.Client
 {
     [Authorize(Roles = "Client")]
     public class AppointmentController : Controller
-        {
-            private readonly ApplicationDbContext _context;
+    {
+        private readonly ApplicationDbContext _context;
 
-            public AppointmentController(ApplicationDbContext context)
-            {
-                _context = context;
-            }
+        public AppointmentController(ApplicationDbContext context)
+        {
+            _context = context;
+        }
 
         // GET: /Client/Appointment/Step1
         // Шаг 1: Выбор услуги
@@ -90,23 +91,23 @@ namespace LisBlanc.AdminPanel.Controllers.Client
         // GET: /Client/Appointment/Step2
         // Шаг 2: Выбор мастера
         public async Task<IActionResult> Step2()
+        {
+            if (!TempData.ContainsKey("ServiceId"))
             {
-                if (!TempData.ContainsKey("ServiceId"))
-                {
-                    return RedirectToAction("Step1");
-                }
-
-                int serviceId = (int)TempData["ServiceId"];
-                TempData.Keep("ServiceId"); // Сохраняем для следующего шага
-
-                // Получаем всех активных мастеров
-                var masters = await _context.Masters
-                    .Where(m => m.IsActive)
-                    .ToListAsync();
-
-                ViewBag.ServiceId = serviceId;
-                return View(masters);
+                return RedirectToAction("Step1");
             }
+
+            int serviceId = (int)TempData["ServiceId"];
+            TempData.Keep("ServiceId"); // Сохраняем для следующего шага
+
+            // Получаем всех активных мастеров
+            var masters = await _context.Masters
+                .Where(m => m.IsActive)
+                .ToListAsync();
+
+            ViewBag.ServiceId = serviceId;
+            return View(masters);
+        }
 
         [HttpPost]
         public IActionResult Step2(int masterId)
@@ -150,13 +151,14 @@ namespace LisBlanc.AdminPanel.Controllers.Client
 
             return View("~/Views/Client/Appointment/Step3.cshtml");
         }
+
         // POST: /Client/Appointment/Step3
         [HttpPost]
-            public IActionResult Step3(DateTime selectedDateTime)
-            {
-                TempData["SelectedDateTime"] = selectedDateTime.ToString("yyyy-MM-dd HH:mm:ss");
-                return RedirectToAction("Step4");
-            }
+        public IActionResult Step3(DateTime selectedDateTime)
+        {
+            TempData["SelectedDateTime"] = selectedDateTime.ToString("yyyy-MM-dd HH:mm:ss");
+            return RedirectToAction("Step4");
+        }
 
         // GET: /Client/Appointment/Step4
         public async Task<IActionResult> Step4()
@@ -172,7 +174,7 @@ namespace LisBlanc.AdminPanel.Controllers.Client
 
             // Загружаем услугу
             var service = await _context.Services.FindAsync(serviceId);
-            ViewBag.Service = service;  // ← вот это важно!
+            ViewBag.Service = service;
 
             var model = new CreateAppointmentRequestViewModel
             {
@@ -189,7 +191,6 @@ namespace LisBlanc.AdminPanel.Controllers.Client
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreateAppointmentRequestViewModel model)
         {
-
             if (ModelState.IsValid)
             {
                 // Проверяем, свободно ли ещё это время
@@ -208,15 +209,29 @@ namespace LisBlanc.AdminPanel.Controllers.Client
                     return View("~/Views/Client/Appointment/Step4.cshtml", model);
                 }
 
-                // Создаём заявку
+                // Получаем ID текущего пользователя
+                int? userId = null;
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrEmpty(userIdClaim))
+                {
+                    var user = await _context.Users.FirstOrDefaultAsync(u => u.Id.ToString() == userIdClaim);
+                    if (user != null)
+                    {
+                        userId = user.Id;
+                    }
+                }
+
+                // Создаём заявку с привязкой к пользователю
                 var appointmentRequest = new AppointmentRequest
                 {
                     MasterId = model.MasterId,
                     ServiceId = model.ServiceId,
                     ClientName = model.ClientName,
                     ClientPhone = model.ClientPhone,
-                    CreatedAt = model.SelectedDateTime,
-                    Status = RequestStatus.Confirmed // Сразу подтверждаем
+                    CreatedAt = DateTime.Now,
+                    AppointmentDate = model.SelectedDateTime,
+                    Status = RequestStatus.Confirmed,
+                    UserId = userId
                 };
 
                 _context.AppointmentRequests.Add(appointmentRequest);
@@ -282,17 +297,6 @@ namespace LisBlanc.AdminPanel.Controllers.Client
             var fullDayOff = dayOffSlots.FirstOrDefault(s => s.StartTime <= startOfDay && s.EndTime >= endOfDay);
             if (fullDayOff != null)
             {
-                // Определяем тип блокировки для сообщения
-                string message = fullDayOff.Status switch
-                {
-                    SlotStatus.DayOff => "У мастера выходной в этот день",
-                    SlotStatus.SickLeave => "Мастер на больничном в этот день",
-                    SlotStatus.Vacation => "Мастер в отпуске в этот день",
-                    _ => "Мастер не работает в этот день"
-                };
-
-                // Здесь можно сохранить сообщение, но метод возвращает List<object>
-                // Поэтому просто возвращаем пустой список
                 return new List<object>();
             }
 
@@ -334,22 +338,22 @@ namespace LisBlanc.AdminPanel.Controllers.Client
 
         // Проверка доступности слота
         private async Task<bool> CheckAvailability(int masterId, int serviceId, DateTime startTime)
-            {
-                var service = await _context.Services.FindAsync(serviceId);
-                if (service == null) return false;
+        {
+            var service = await _context.Services.FindAsync(serviceId);
+            if (service == null) return false;
 
-                DateTime endTime = startTime.AddMinutes(service.DurationMinutes);
+            DateTime endTime = startTime.AddMinutes(service.DurationMinutes);
 
-                var conflictingSlots = await _context.ScheduleSlots
-                    .Where(s => s.MasterId == masterId &&
-                                s.Status == SlotStatus.Booked &&
-                                ((s.StartTime <= startTime && s.EndTime > startTime) ||
-                                 (s.StartTime < endTime && s.EndTime >= endTime) ||
-                                 (s.StartTime >= startTime && s.EndTime <= endTime)))
-                    .AnyAsync();
+            var conflictingSlots = await _context.ScheduleSlots
+                .Where(s => s.MasterId == masterId &&
+                            s.Status == SlotStatus.Booked &&
+                            ((s.StartTime <= startTime && s.EndTime > startTime) ||
+                             (s.StartTime < endTime && s.EndTime >= endTime) ||
+                             (s.StartTime >= startTime && s.EndTime <= endTime)))
+                .AnyAsync();
 
-                return !conflictingSlots;
-            }
+            return !conflictingSlots;
+        }
 
         private async Task<(List<object> slots, string message)> GetAvailableSlotsWithMessage(int masterId, int serviceId, DateTime date)
         {
@@ -461,12 +465,11 @@ namespace LisBlanc.AdminPanel.Controllers.Client
                 var (slots, _) = await GetAvailableSlotsWithMessage(masterId, serviceId, date);
                 if (slots.Any())
                 {
-                    return true; // Есть хотя бы один свободный слот
+                    return true;
                 }
             }
 
-            return false; // Нет свободных слотов
-
+            return false;
         }
     }
 }

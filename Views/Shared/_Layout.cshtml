@@ -7,21 +7,68 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        /* Глобальные стили для адаптивности */
+        .navbar-nav {
+            flex-wrap: wrap;
+        }
+
+            .navbar-nav .nav-link {
+                white-space: nowrap;
+            }
+
+        @@media (max-width: 768px) {
+            .navbar-nav .nav-link {
+                white-space: normal;
+                padding: 8px 12px;
+            }
+
+            .container {
+                padding-left: 15px;
+                padding-right: 15px;
+            }
+        }
+
+        /* Чтобы контент не прилипал к краям на мобилках */
+        .container {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        /* Фикс для footer */
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        main {
+            flex: 1 0 auto;
+        }
+
+        footer {
+            flex-shrink: 0;
+        }
+    </style>
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Lis Blanc</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container-fluid px-3 px-md-4">
+                <a class="navbar-brand fw-bold" asp-area="" asp-controller="Home" asp-action="Index">Lis Blanc</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        @if (!User.IsInRole("Admin,Manager"))
+                <div class="collapse navbar-collapse" id="navbarMain">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        @if (!User.IsInRole("Admin") && !User.IsInRole("Manager"))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Главная</a>
+                                <a class="nav-link" asp-controller="Home" asp-action="Index">Главная</a>
                             </li>
                         }
 
@@ -30,50 +77,50 @@
                             if (User.IsInRole("Admin"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Masters" asp-action="Index">Мастера</a>
+                                    <a class="nav-link" asp-controller="Masters" asp-action="Index">Мастера</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Services" asp-action="Index">Услуги</a>
+                                    <a class="nav-link" asp-controller="Services" asp-action="Index">Услуги</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Schedule" asp-action="Index">Расписание</a>
+                                    <a class="nav-link" asp-controller="Schedule" asp-action="Index">Расписание</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="AppointmentRequests" asp-action="Index">Заявки</a>
+                                    <a class="nav-link" asp-controller="AppointmentRequests" asp-action="Index">Заявки</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Users" asp-action="Index">Пользователи</a>
+                                    <a class="nav-link" asp-controller="Users" asp-action="Index">Пользователи</a>
                                 </li>
                             }
                             else if (User.IsInRole("Manager"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Masters" asp-action="Index">Мастера</a>
+                                    <a class="nav-link" asp-controller="Masters" asp-action="Index">Мастера</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Services" asp-action="Index">Услуги</a>
+                                    <a class="nav-link" asp-controller="Services" asp-action="Index">Услуги</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Schedule" asp-action="Index">Расписание</a>
+                                    <a class="nav-link" asp-controller="Schedule" asp-action="Index">Расписание</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="AppointmentRequests" asp-action="Index">Заявки</a>
+                                    <a class="nav-link" asp-controller="AppointmentRequests" asp-action="Index">Заявки</a>
                                 </li>
                             }
                             else if (User.IsInRole("Client"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Profile" asp-action="Index">Личный кабинет</a>
+                                    <a class="nav-link" asp-controller="Profile" asp-action="Index">Личный кабинет</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Appointment" asp-action="Step1">Записаться</a>
+                                    <a class="nav-link" asp-controller="Appointment" asp-action="Step1">Записаться</a>
                                 </li>
                             }
                         }
                         else
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Appointment" asp-action="Step1">Записаться</a>
+                                <a class="nav-link" asp-controller="Appointment" asp-action="Step1">Записаться</a>
                             </li>
                         }
                     </ul>
@@ -81,28 +128,30 @@
                     <ul class="navbar-nav">
                         @if (User.Identity.IsAuthenticated)
                         {
-                            <li class="nav-item">
-                                <span class="navbar-text text-dark me-2">
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="fas fa-user"></i> @User.Identity.Name
-                                </span>
-                            </li>
-                            <li class="nav-item">
-                                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                                    <button type="submit" class="btn btn-link nav-link text-dark">
-                                        <i class="fas fa-sign-out-alt"></i> Выйти
-                                    </button>
-                                </form>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                    <li>
+                                        <form asp-controller="Account" asp-action="Logout" method="post">
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="fas fa-sign-out-alt"></i> Выйти
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
                             </li>
                         }
                         else
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">
+                                <a class="nav-link" asp-controller="Account" asp-action="Login">
                                     <i class="fas fa-sign-in-alt"></i> Вход
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Account" asp-action="Register">
+                                <a class="nav-link" asp-controller="Account" asp-action="Register">
                                     <i class="fas fa-user-plus"></i> Регистрация
                                 </a>
                             </li>
@@ -113,15 +162,19 @@
         </nav>
     </header>
 
-    <main role="main" class="pb-3">
-        <div class="container">
+    <main role="main" class="pb-5">
+        <div class="container px-3 px-md-4">
             @RenderBody()
         </div>
     </main>
 
-    <footer class="footer">
-        <div class="container-fluid">
-            &copy; 2026 - Салон красоты Lis Blanc
+    <footer class="footer bg-light py-3 mt-auto">
+        <div class="container-fluid px-3 px-md-4">
+            <div class="row">
+                <div class="col text-center text-muted">
+                    &copy; 2026 - Салон красоты Lis Blanc
+                </div>
+            </div>
         </div>
     </footer>
 

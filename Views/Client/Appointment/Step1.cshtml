@@ -8,20 +8,122 @@
     var firstCategory = categories.FirstOrDefault() ?? "";
 }
 
+<style>
+    /* Стили для вкладок */
+    .nav-tabs .nav-link {
+        color: #495057;
+        font-weight: 500;
+        padding: 10px 20px;
+        border: none;
+        border-bottom: 3px solid transparent;
+    }
+
+        .nav-tabs .nav-link:hover {
+            border-bottom-color: #dee2e6;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #b47aff;
+            border-bottom-color: #b47aff;
+            background: none;
+        }
+
+    /* Стили для карточек услуг */
+    .service-card {
+        cursor: pointer;
+        transition: all 0.3s;
+        border: 2px solid #e5d0ff;
+        border-radius: 16px;
+        height: 100%;
+        background: white;
+        overflow: hidden;
+    }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(180, 122, 255, 0.2);
+            border-color: #b47aff;
+        }
+
+        .service-card.selected {
+            border-color: #b47aff;
+            background: linear-gradient(135deg, #f8f0ff, #f3e8ff);
+        }
+
+        .service-card .card-body {
+            padding: 20px;
+        }
+
+        .service-card .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #2d1b4e;
+            margin-bottom: 8px;
+        }
+
+        .service-card .price {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #b47aff;
+        }
+
+        .service-card .duration {
+            font-size: 0.85rem;
+            color: #6c757d;
+            background: #f3e8ff;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+    .category-badge {
+        background: linear-gradient(135deg, #e5d0ff, #d4b5ff);
+        color: #2d1b4e;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        display: inline-block;
+        margin-bottom: 10px;
+    }
+
+    .progress-bar {
+        background: linear-gradient(135deg, #b47aff, #8a5cd9) !important;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #b47aff, #8a5cd9);
+        border: none;
+        border-radius: 12px;
+        padding: 12px 30px;
+    }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(106, 13, 173, 0.3);
+        }
+
+        .btn-primary:disabled {
+            background: #c9b6e0;
+            opacity: 0.6;
+            transform: none;
+        }
+</style>
+
 <div class="container mt-4">
     <!-- Прогресс-бар -->
-    <div class="progress mb-4" style="height: 30px;">
-        <div class="progress-bar bg-primary" role="progressbar" style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">
+    <div class="progress mb-4" style="height: 30px; border-radius: 15px;">
+        <div class="progress-bar" role="progressbar" style="width: 25%; border-radius: 15px;">
             Шаг 1 из 4: Выбор услуги
         </div>
     </div>
 
-    <h2 class="text-center mb-4">Выберите услугу</h2>
+    <h2 class="text-center mb-4" style="color: #2d1b4e;">Выберите услугу</h2>
 
     @if (!Model.Any())
     {
-        <div class="alert alert-info text-center">
-            Услуги временно недоступны
+        <div class="alert alert-info text-center" style="border-radius: 20px;">
+            <i class="fas fa-spa fa-2x mb-2"></i>
+            <p>Услуги временно недоступны</p>
         </div>
     }
     else
@@ -33,12 +135,12 @@
                 var isActive = category == firstCategory;
                 <li class="nav-item" role="presentation">
                     <button class="nav-link @(isActive ? "active" : "")"
-                            id="tab-@category"
+                            id="tab-@category.Replace(" ", "")"
                             data-bs-toggle="tab"
-                            data-bs-target="#content-@category"
+                            data-bs-target="#content-@category.Replace(" ", "")"
                             type="button"
                             role="tab">
-                        @category
+                        <i class="fas fa-tag"></i> @category
                     </button>
                 </li>
             }
@@ -50,55 +152,62 @@
             {
                 var isActive = category == firstCategory;
                 var servicesInCategory = Model.Where(s => s.Category == category).ToList();
+                var categoryId = category.Replace(" ", "");
 
                 <div class="tab-pane fade @(isActive ? "show active" : "")"
-                     id="content-@category"
+                     id="content-@categoryId"
                      role="tabpanel">
 
-                    <div class="row">
-                        @foreach (var service in servicesInCategory)
-                        {
-                            <div class="col-md-6 col-lg-4 mb-4">
-                                <div class="service-card" data-service-id="@service.Id">
-                                    <div class="card-body">
-                                        <h5 class="card-title">@service.Name</h5>
-                                        @if (!string.IsNullOrEmpty(service.Description))
-                                        {
-                                            <p class="card-text text-muted">@service.Description</p>
-                                        }
-                                        <div class="d-flex justify-content-between align-items-center mt-3">
-                                            <span class="price">@service.Price.ToString("N0") ₽</span>
-                                            <span class="duration">
-                                                <i class="far fa-clock"></i> @service.DurationMinutes мин
-                                            </span>
+                    @if (!servicesInCategory.Any())
+                    {
+                        <div class="alert alert-light text-center">Нет услуг в этой категории</div>
+                    }
+                    else
+                    {
+                        <div class="row">
+                            @foreach (var service in servicesInCategory)
+                            {
+                                <div class="col-md-6 col-lg-4 mb-4">
+                                    <div class="service-card" data-service-id="@service.Id">
+                                        <div class="card-body">
+                                            <span class="category-badge">@service.Category</span>
+                                            <h5 class="card-title">@service.Name</h5>
+                                            @if (!string.IsNullOrEmpty(service.Description))
+                                            {
+                                                <p class="card-text text-muted small">@service.Description</p>
+                                            }
+                                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                                <span class="price">@service.Price.ToString("N0") ₽</span>
+                                                <span class="duration">
+                                                    <i class="far fa-clock"></i> @service.DurationMinutes мин
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        }
-                    </div>
+                            }
+                        </div>
+                    }
                 </div>
             }
         </div>
 
-        <div id="loadingSpinner" style="display: none;" class="text-center mt-3">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Загрузка...</span>
-            </div>
-            <p>Проверяем доступность мастеров...</p>
-        </div>
-
-        <script>
-            document.getElementById('serviceForm').addEventListener('submit', function() {
-                document.getElementById('loadingSpinner').style.display = 'block';
-            });
-        </script>
-
         <!-- Форма отправки -->
         <form asp-action="Step1" method="post" id="serviceForm">
+            @Html.AntiForgeryToken()
             <input type="hidden" name="serviceId" id="selectedServiceId" value="" />
 
+            <div id="loadingSpinner" style="display: none;" class="text-center mt-3">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+                <p>Проверяем доступность мастеров...</p>
+            </div>
+
             <div class="text-center mt-4">
+                <button type="button" class="btn btn-secondary btn-lg me-3" onclick="history.back()">
+                    <i class="fas fa-arrow-left"></i> Назад
+                </button>
                 <button type="submit" class="btn btn-primary btn-lg" id="nextBtn" disabled>
                     Далее <i class="fas fa-arrow-right"></i>
                 </button>
@@ -107,59 +216,8 @@
     }
 </div>
 
-    <style>
-        /* Стили для вкладок */
-        .nav-tabs .nav-link {
-            color: #495057;
-            font-weight: 500;
-            padding: 10px 20px;
-            border: none;
-            border-bottom: 3px solid transparent;
-        }
-
-            .nav-tabs .nav-link:hover {
-                border-bottom-color: #dee2e6;
-            }
-
-            .nav-tabs .nav-link.active {
-                color: #0d6efd;
-                border-bottom-color: #0d6efd;
-                background: none;
-            }
-
-        /* Стили для карточек услуг */
-        .service-card {
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 2px solid #dee2e6;
-            border-radius: 10px;
-            height: 100%;
-        }
-
-            .service-card:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-                border-color: #0d6efd;
-            }
-
-            .service-card.selected {
-                border-color: #0d6efd;
-                background-color: #f0f7ff;
-            }
-
-            .service-card .price {
-                font-size: 1.2rem;
-                font-weight: 700;
-                color: #0d6efd;
-            }
-
-            .service-card .duration {
-                font-size: 0.9rem;
-                color: #6c757d;
-            }
-    </style>
-
 @section Scripts {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <script>
         // Выбор услуги
         document.querySelectorAll('.service-card').forEach(card => {
@@ -190,6 +248,17 @@
                 document.getElementById('selectedServiceId').value = '';
                 document.getElementById('nextBtn').disabled = true;
             });
+        });
+
+        // Обработка отправки формы
+        document.getElementById('serviceForm').addEventListener('submit', function() {
+            if (!document.getElementById('selectedServiceId').value) {
+                event.preventDefault();
+                alert('Пожалуйста, выберите услугу');
+                return false;
+            }
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.getElementById('nextBtn').disabled = true;
         });
     </script>
 }

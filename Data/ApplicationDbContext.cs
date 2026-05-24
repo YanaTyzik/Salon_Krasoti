@@ -22,7 +22,11 @@ namespace LisBlanc.AdminPanel.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-
+            modelBuilder.Entity<AppointmentRequest>()
+                .HasOne(ar => ar.User)
+                .WithMany()
+                .HasForeignKey(ar => ar.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
             // Настройка связи: у одной заявки - один мастер
             modelBuilder.Entity<AppointmentRequest>()
                 .HasOne(ar => ar.Master)
