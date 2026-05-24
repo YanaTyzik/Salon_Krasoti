@@ -6,15 +6,34 @@
 
 <h1>Добавить блокировку в расписание</h1>
 
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @Html.Raw(TempData["Error"])
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["Warning"] != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        @TempData["Warning"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
 <div class="row">
     <div class="col-md-6">
         <form asp-action="CreateBlock" method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-            @if (!string.IsNullOrEmpty(ViewBag.Error))
-            {
-                <div class="alert alert-danger">@ViewBag.Error</div>
-            }
 
             <div class="form-group">
                 <label for="masterId" class="control-label">Мастер</label>

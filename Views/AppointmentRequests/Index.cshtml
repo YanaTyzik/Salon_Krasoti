@@ -4,79 +4,246 @@
     ViewData["Title"] = "Входящие заявки";
 }
 
-<h1>Входящие заявки на запись</h1>
+<style>
+    .request-card {
+        border: none;
+        border-radius: 20px;
+        transition: transform 0.3s, box-shadow 0.3s;
+        overflow: hidden;
+        margin-bottom: 20px;
+        background: white;
+        height: 100%;
+    }
+
+        .request-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(106, 13, 173, 0.15);
+        }
+
+        .request-card .card-header {
+            background: linear-gradient(135deg, #b47aff, #8a5cd9);
+            color: white;
+            padding: 15px 20px;
+            border: none;
+        }
+
+    .status-confirmed {
+        background: #d4edda;
+        color: #155724;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+
+    .status-new {
+        background: #fff3cd;
+        color: #856404;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+
+    .status-rejected {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+
+    .info-label {
+        font-size: 0.7rem;
+        color: #9b9b9b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 3px;
+    }
+
+    .info-value {
+        font-weight: 600;
+        color: #2d1b4e;
+        font-size: 0.95rem;
+    }
+
+    .service-price {
+        color: #b47aff;
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    .appointment-datetime {
+        background: #f3e8ff;
+        padding: 8px 12px;
+        border-radius: 12px;
+        margin-top: 10px;
+    }
+
+    .btn-edit {
+        background: #ffc107;
+        color: #2d1b4e;
+        border: none;
+        border-radius: 10px;
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    .btn-delete {
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+        .btn-edit:hover, .btn-delete:hover {
+            transform: scale(1.02);
+            opacity: 0.9;
+        }
+
+    .create-btn {
+        background: linear-gradient(135deg, #b47aff, #8a5cd9);
+        border: none;
+        border-radius: 12px;
+        padding: 10px 20px;
+        margin-bottom: 20px;
+    }
+
+        .create-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(106, 13, 173, 0.3);
+        }
+</style>
+
+<h1 style="color: #2d1b4e;">Входящие заявки на запись</h1>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
 
 @if (User.IsInRole("Admin"))
 {
     <p>
-        <a asp-action="Create" class="btn btn-primary">Создать новую заявку</a>
+        <a asp-action="Create" class="btn btn-primary create-btn">
+            <i class="fas fa-plus-circle"></i> Создать новую заявку
+        </a>
     </p>
-}</p>
+}
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Имя клиента</th>
-            <th>Телефон</th>
-            <th>Мастер</th>
-            <th>Услуга</th>
-            <th>Стоимость</th>
-            <th>Дата и время записи</th>
-            <th>Статус</th>
-            <th>Действия</th>
-        </tr>
-    </thead>
-    <tbody>
+@if (!Model.Any())
+{
+    <div class="alert alert-info text-center" style="border-radius: 20px;">
+        <i class="fas fa-inbox fa-2x mb-2"></i>
+        <p>Заявки не найдены</p>
+    </div>
+}
+else
+{
+    <div class="row">
         @foreach (var item in Model)
         {
-            <tr>
-                <td>@Html.DisplayFor(modelItem => item.ClientName)</td>
-                <td>@Html.DisplayFor(modelItem => item.ClientPhone)</td>
-                <td>@(item.Master?.FullName ?? "Не указан")</td>
-                <td>@(item.Service?.Name ?? "Не указана")</td>
-                <td>
-                    @if (item.Service != null)
-                    {
-                        <strong>@item.Service.Price.ToString("N0") ₽</strong>
-                    }
-                    else
-                    {
-                        <span class="text-muted">—</span>
-                    }
-                </td>
-                <td>
-                    @if (item.CreatedAt > DateTime.MinValue && item.CreatedAt.Year > 2000)
-                    {
-                        @item.CreatedAt.ToString("dd.MM.yyyy HH:mm")
-                    }
-                    else
-                    {
-                        <span class="text-muted">Дата не указана</span>
-                    }
-                </td>
-                <td>
-                    @switch (item.Status)
-                    {
-                        case RequestStatus.Confirmed:
-                            <span class="badge bg-success">Подтверждена</span>
-                            break;
-                        case RequestStatus.New:
-                            <span class="badge bg-success">Новая</span>
-                            break;
-                        case RequestStatus.Rejected:
-                            <span class="badge bg-danger">Отклонена</span>
-                            break;
-                    }
-                </td>
-                <td>
-                    <div class="btn-group" role="group" style="gap: 5px;">
-                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Редактировать</a>
-                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Удалить</a>
-
-                       
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card request-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>
+                            <i class="fas fa-calendar-check"></i> Заявка #@item.Id
+                        </span>
+                        <span class="status-@item.Status.ToString().ToLower()">
+                            @switch (item.Status)
+                            {
+                                case RequestStatus.Confirmed:
+                                    <span><i class="fas fa-check-circle"></i> Подтверждена</span>
+                                    break;
+                                case RequestStatus.New:
+                                    <span><i class="fas fa-clock"></i> Новая</span>
+                                    break;
+                                case RequestStatus.Rejected:
+                                    <span><i class="fas fa-times-circle"></i> Отклонена</span>
+                                    break;
+                            }
+                        </span>
                     </div>
-                </td>
-            </tr>
+                    <div class="card-body">
+                        <!-- Клиент -->
+                        <div class="mb-3">
+                            <div class="info-label">
+                                <i class="fas fa-user"></i> Клиент
+                            </div>
+                            <div class="info-value">@item.ClientName</div>
+                            <div class="info-value small text-muted">
+                                <i class="fas fa-phone"></i> @item.ClientPhone
+                            </div>
+                        </div>
+
+                        <!-- Мастер -->
+                        <div class="mb-3">
+                            <div class="info-label">
+                                <i class="fas fa-scissors"></i> Мастер
+                            </div>
+                            <div class="info-value">@(item.Master?.FullName ?? "Не указан")</div>
+                            <div class="info-value small text-muted">
+                                <i class="fas fa-tag"></i> @(item.Master?.Specialization ?? "")
+                            </div>
+                        </div>
+
+                        <!-- Услуга -->
+                        <div class="mb-3">
+                            <div class="info-label">
+                                <i class="fas fa-spa"></i> Услуга
+                            </div>
+                            <div class="info-value">@(item.Service?.Name ?? "Не указана")</div>
+                            <div class="service-price mt-1">
+                                @(item.Service?.Price.ToString("N0") ?? "0") ₽
+                                @if (item.Service?.DurationMinutes > 0)
+                                {
+                                    <span class="small text-muted ms-2">
+                                        <i class="far fa-clock"></i> @item.Service.DurationMinutes мин
+                                    </span>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Дата и время записи -->
+                        <div class="appointment-datetime">
+                            <div class="info-label">
+                                <i class="far fa-calendar-alt"></i> Дата и время записи
+                            </div>
+                            <div class="info-value">
+                                @if (item.AppointmentDate.HasValue)
+                                {
+                                    <i class="far fa-clock"></i> @item.AppointmentDate.Value.ToString("dd.MM.yyyy HH:mm")
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Дата не указана</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-0 pb-3">
+                        <div class="d-flex gap-2">
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-edit flex-grow-1">
+                                <i class="fas fa-edit"></i> Редактировать
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-delete flex-grow-1">
+                                <i class="fas fa-trash"></i> Удалить
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         }
-    </tbody>
-</table>
+    </div>
+}
+
+<!-- Добавляем иконки FontAwesome если ещё нет -->
+@section Scripts {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+}

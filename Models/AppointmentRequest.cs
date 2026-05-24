@@ -6,6 +6,8 @@ namespace LisBlanc.AdminPanel.Models
     {
         [Key]
         public int Id { get; set; }
+        public int? UserId { get; set; }
+        public virtual User? User { get; set; }
 
         // ID мастера, к которому хотят записаться
         [Required]
@@ -28,6 +30,9 @@ namespace LisBlanc.AdminPanel.Models
         // Когда поступила заявка
         [Display(Name = "Дата заявки")]
         public DateTime CreatedAt { get; set; } // Убрали = DateTime.Now
+
+        [Display(Name = "Дата и время записи")]
+        public DateTime? AppointmentDate { get; set; }
 
         // Статус заявки (подтверждена, отклонена)
         [Display(Name = "Статус")]

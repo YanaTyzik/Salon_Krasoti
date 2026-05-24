@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using LisBlanc.AdminPanel.Data;
 using LisBlanc.AdminPanel.Models;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace LisBlanc.AdminPanel.Controllers
 {
@@ -24,7 +25,10 @@ namespace LisBlanc.AdminPanel.Controllers
         // GET: AppointmentRequests
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.AppointmentRequests.Include(a => a.Master).Include(a => a.Service);
+            var applicationDbContext = _context.AppointmentRequests
+                .Include(a => a.Master)
+                .Include(a => a.Service)
+                .Include(a => a.User);
             return View(await applicationDbContext.ToListAsync());
         }
 
@@ -39,6 +43,7 @@ namespace LisBlanc.AdminPanel.Controllers
             var appointmentRequest = await _context.AppointmentRequests
                 .Include(a => a.Master)
                 .Include(a => a.Service)
+                .Include(a => a.User)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (appointmentRequest == null)
             {
@@ -62,18 +67,15 @@ namespace LisBlanc.AdminPanel.Controllers
         // GET: AppointmentRequests/GetAvailableSlots
         public async Task<IActionResult> GetAvailableSlots(int masterId, int serviceId, DateTime date)
         {
-            // Получаем услугу, чтобы узнать длительность
             var service = await _context.Services.FindAsync(serviceId);
             if (service == null)
             {
                 return Json(new { error = "Услуга не найдена" });
             }
 
-            // Начало и конец выбранного дня
             var startOfDay = date.Date;
             var endOfDay = startOfDay.AddDays(1).AddTicks(-1);
 
-            // Получаем все занятые слоты мастера на этот день
             var busySlots = await _context.ScheduleSlots
                 .Where(s => s.MasterId == masterId
                     && s.StartTime >= startOfDay
@@ -81,7 +83,6 @@ namespace LisBlanc.AdminPanel.Controllers
                     && s.Status == SlotStatus.Booked)
                 .ToListAsync();
 
-            // Получаем выходные/больничные/отпуска мастера
             var dayOffSlots = await _context.ScheduleSlots
                 .Where(s => s.MasterId == masterId
                     && s.StartTime >= startOfDay
@@ -91,33 +92,28 @@ namespace LisBlanc.AdminPanel.Controllers
                         || s.Status == SlotStatus.Vacation))
                 .ToListAsync();
 
-            // Если есть слот на весь день (выходной и т.д.), то нет свободного времени
             if (dayOffSlots.Any(s => s.StartTime <= startOfDay && s.EndTime >= endOfDay))
             {
                 return Json(new List<object>());
             }
 
-            // Генерируем все возможные слоты с 9:00 до 21:00 с шагом 30 минут
             var availableSlots = new List<AvailableSlot>();
-            var currentTime = startOfDay.AddHours(9); // Начинаем с 9:00
+            var currentTime = startOfDay.AddHours(9);
 
-            while (currentTime < startOfDay.AddHours(21)) // До 21:00
+            while (currentTime < startOfDay.AddHours(21))
             {
                 var slotEnd = currentTime.AddMinutes(service.DurationMinutes);
 
-                // Проверяем, не выходит ли за 21:00
                 if (slotEnd > startOfDay.AddHours(21))
                 {
                     break;
                 }
 
-                // Проверяем, не занят ли слот
                 bool isBusy = busySlots.Any(s =>
                     (currentTime >= s.StartTime && currentTime < s.EndTime) ||
                     (slotEnd > s.StartTime && slotEnd <= s.EndTime) ||
                     (s.StartTime >= currentTime && s.StartTime < slotEnd));
 
-                // Проверяем, не попадает ли на выходной/больничный
                 bool isDayOff = dayOffSlots.Any(s =>
                     currentTime >= s.StartTime && slotEnd <= s.EndTime);
 
@@ -131,7 +127,7 @@ namespace LisBlanc.AdminPanel.Controllers
                     });
                 }
 
-                currentTime = currentTime.AddMinutes(30); // Шаг 30 минут
+                currentTime = currentTime.AddMinutes(30);
             }
 
             return Json(availableSlots.Select(s => new {
@@ -147,21 +143,34 @@ namespace LisBlanc.AdminPanel.Controllers
         {
             if (ModelState.IsValid)
             {
+                // Получаем ID текущего пользователя (если есть авторизация)
+                int? userId = null;
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrEmpty(userIdClaim))
+                {
+                    var user = await _context.Users.FirstOrDefaultAsync(u => u.Id.ToString() == userIdClaim);
+                    if (user != null)
+                    {
+                        userId = user.Id;
+                    }
+                }
+
                 var appointmentRequest = new AppointmentRequest
                 {
                     MasterId = viewModel.MasterId,
                     ServiceId = viewModel.ServiceId,
                     ClientName = viewModel.ClientName,
                     ClientPhone = viewModel.ClientPhone,
-                    CreatedAt = viewModel.SelectedDateTime,
+                    CreatedAt = DateTime.Now,
+                    AppointmentDate = viewModel.SelectedDateTime,
                     Status = RequestStatus.Confirmed,
-                    RejectionReason = null
+                    RejectionReason = null,
+                    UserId = userId
                 };
 
                 _context.Add(appointmentRequest);
                 await _context.SaveChangesAsync();
 
-                // Сразу создаем слот в расписании
                 var service = await _context.Services.FindAsync(viewModel.ServiceId);
                 if (service != null)
                 {
@@ -207,7 +216,7 @@ namespace LisBlanc.AdminPanel.Controllers
         // POST: AppointmentRequests/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,MasterId,ServiceId,ClientName,ClientPhone,CreatedAt,Status,RejectionReason")] AppointmentRequest appointmentRequest)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,MasterId,ServiceId,ClientName,ClientPhone,CreatedAt,AppointmentDate,Status,RejectionReason,UserId")] AppointmentRequest appointmentRequest)
         {
             if (id != appointmentRequest.Id)
             {
@@ -218,7 +227,6 @@ namespace LisBlanc.AdminPanel.Controllers
             {
                 try
                 {
-                    // Получаем оригинальную заявку из базы до изменений
                     var originalRequest = await _context.AppointmentRequests
                         .AsNoTracking()
                         .FirstOrDefaultAsync(ar => ar.Id == id);
@@ -228,11 +236,13 @@ namespace LisBlanc.AdminPanel.Controllers
                         return NotFound();
                     }
 
-                    // Проверяем, изменился ли статус на "Отклонена"
+                    var appointmentTime = appointmentRequest.AppointmentDate ?? appointmentRequest.CreatedAt;
+                    var originalTime = originalRequest.AppointmentDate ?? originalRequest.CreatedAt;
+
+                    // Изменился статус на "Отклонена"
                     if (originalRequest.Status == RequestStatus.Confirmed &&
                         appointmentRequest.Status == RequestStatus.Rejected)
                     {
-                        // Удаляем слот из расписания
                         var slot = await _context.ScheduleSlots
                             .FirstOrDefaultAsync(s => s.AppointmentRequestId == id);
 
@@ -241,31 +251,29 @@ namespace LisBlanc.AdminPanel.Controllers
                             _context.ScheduleSlots.Remove(slot);
                         }
                     }
-                    // Проверяем, изменился ли статус с "Отклонена" на "Подтверждена"
+                    // Изменился статус с "Отклонена" на "Подтверждена"
                     else if (originalRequest.Status == RequestStatus.Rejected &&
                              appointmentRequest.Status == RequestStatus.Confirmed)
                     {
-                        // Создаем новый слот
                         var service = await _context.Services.FindAsync(appointmentRequest.ServiceId);
                         if (service != null)
                         {
                             var slot = new ScheduleSlot
                             {
                                 MasterId = appointmentRequest.MasterId,
-                                StartTime = appointmentRequest.CreatedAt,
-                                EndTime = appointmentRequest.CreatedAt.AddMinutes(service.DurationMinutes),
+                                StartTime = appointmentTime,
+                                EndTime = appointmentTime.AddMinutes(service.DurationMinutes),
                                 Status = SlotStatus.Booked,
                                 AppointmentRequestId = appointmentRequest.Id
                             };
                             _context.ScheduleSlots.Add(slot);
                         }
                     }
-                    // Проверяем, изменилось ли время записи у подтвержденной заявки
+                    // Изменилось время у подтвержденной заявки
                     else if (originalRequest.Status == RequestStatus.Confirmed &&
                              appointmentRequest.Status == RequestStatus.Confirmed &&
-                             originalRequest.CreatedAt != appointmentRequest.CreatedAt)
+                             originalTime != appointmentTime)
                     {
-                        // Обновляем время в слоте
                         var slot = await _context.ScheduleSlots
                             .FirstOrDefaultAsync(s => s.AppointmentRequestId == id);
 
@@ -274,8 +282,8 @@ namespace LisBlanc.AdminPanel.Controllers
                             var service = await _context.Services.FindAsync(appointmentRequest.ServiceId);
                             if (service != null)
                             {
-                                slot.StartTime = appointmentRequest.CreatedAt;
-                                slot.EndTime = appointmentRequest.CreatedAt.AddMinutes(service.DurationMinutes);
+                                slot.StartTime = appointmentTime;
+                                slot.EndTime = appointmentTime.AddMinutes(service.DurationMinutes);
                                 _context.ScheduleSlots.Update(slot);
                             }
                         }
@@ -331,7 +339,6 @@ namespace LisBlanc.AdminPanel.Controllers
             var appointmentRequest = await _context.AppointmentRequests.FindAsync(id);
             if (appointmentRequest != null)
             {
-                // Удаляем связанный слот
                 var slot = await _context.ScheduleSlots
                     .FirstOrDefaultAsync(s => s.AppointmentRequestId == id);
                 if (slot != null)
@@ -386,22 +393,21 @@ namespace LisBlanc.AdminPanel.Controllers
                 return NotFound();
             }
 
-            // Меняем статус
             appointmentRequest.Status = RequestStatus.Confirmed;
 
-            // Получаем услугу, чтобы узнать длительность
             var service = await _context.Services.FindAsync(appointmentRequest.ServiceId);
             if (service == null)
             {
                 return NotFound("Услуга не найдена");
             }
 
-            // Создаем занятый слот в расписании
+            var appointmentTime = appointmentRequest.AppointmentDate ?? appointmentRequest.CreatedAt;
+
             var slot = new ScheduleSlot
             {
                 MasterId = appointmentRequest.MasterId,
-                StartTime = appointmentRequest.CreatedAt,
-                EndTime = appointmentRequest.CreatedAt.AddMinutes(service.DurationMinutes),
+                StartTime = appointmentTime,
+                EndTime = appointmentTime.AddMinutes(service.DurationMinutes),
                 Status = SlotStatus.Booked,
                 AppointmentRequestId = appointmentRequest.Id
             };
@@ -448,7 +454,6 @@ namespace LisBlanc.AdminPanel.Controllers
             appointmentRequest.Status = RequestStatus.Rejected;
             appointmentRequest.RejectionReason = reason;
 
-            // Удаляем слот, если он был создан
             var slot = await _context.ScheduleSlots
                 .FirstOrDefaultAsync(s => s.AppointmentRequestId == id);
             if (slot != null)

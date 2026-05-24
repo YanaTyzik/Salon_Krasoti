@@ -35,7 +35,7 @@ namespace LisBlanc.AdminPanel.Controllers
             var slots = await _context.ScheduleSlots
                 .Include(s => s.Master)
                 .Include(s => s.AppointmentRequest)
-                    .ThenInclude(ar => ar.Service)  // Подгружаем услугу через заявку
+                    .ThenInclude(ar => ar.Service)
                 .Where(s => s.StartTime >= startOfDay && s.StartTime <= endOfDay)
                 .ToListAsync();
 
@@ -44,7 +44,7 @@ namespace LisBlanc.AdminPanel.Controllers
             for (int hour = 9; hour <= 21; hour++)
             {
                 timeSlots.Add($"{hour:D2}:00");
-                if (hour < 21) // Не добавляем 21:30
+                if (hour < 21)
                 {
                     timeSlots.Add($"{hour:D2}:30");
                 }
@@ -98,11 +98,52 @@ namespace LisBlanc.AdminPanel.Controllers
                 return NotFound();
             }
 
+            // ========== НАЧАЛО: ПРОВЕРКА НА СУЩЕСТВУЮЩИЕ ЗАПИСИ КЛИЕНТОВ ==========
+            var startDateTime = startDate.Date;
+            var endDateTime = endDate.Date.AddDays(1).AddTicks(-1);
+
+            // Находим все подтвержденные записи клиентов за выбранный период
+            var existingBookings = await _context.AppointmentRequests
+                .Include(a => a.Master)
+                .Include(a => a.Service)
+                .Where(a => a.MasterId == masterId
+                            && a.Status == RequestStatus.Confirmed
+                            && a.AppointmentDate >= startDateTime
+                            && a.AppointmentDate <= endDateTime)
+                .ToListAsync();
+
+            if (existingBookings.Any())
+            {
+                // Формируем сообщение со списком конфликтующих записей
+                var conflicts = string.Join("<br/>", existingBookings.Select(b =>
+                    $"• {b.AppointmentDate:dd.MM.yyyy HH:mm} - {b.ClientName} ({b.Service?.Name ?? "услуга"})"));
+
+                TempData["Error"] = $"❌ НЕЛЬЗЯ добавить блокировку! У мастера {master.FullName} есть записи клиентов в этот период:<br/>{conflicts}<br/><br/>✏️ Сначала отмените эти записи.";
+
+                ViewBag.Masters = await _context.Masters
+                    .Where(m => m.IsActive)
+                    .Select(m => new { m.Id, FullName = m.LastName + " " + m.FirstName + " " + (m.MiddleName ?? "") })
+                    .ToListAsync();
+                return View();
+            }
+            // ========== КОНЕЦ ПРОВЕРКИ ==========
+
+            // Получаем тип блокировки для сообщения
+            string blockType = status switch
+            {
+                SlotStatus.DayOff => "выходной",
+                SlotStatus.SickLeave => "больничный",
+                SlotStatus.Vacation => "отпуск",
+                _ => "блокировка"
+            };
+
             // Создаем слоты для каждого дня в диапазоне
             var currentDate = startDate.Date;
-            var endDateTime = endDate.Date;
+            var endDateOnly = endDate.Date;
+            int slotsAdded = 0;
+            int slotsSkipped = 0;
 
-            while (currentDate <= endDateTime)
+            while (currentDate <= endDateOnly)
             {
                 // Создаем слот на весь день (с 00:00 до 23:59)
                 var slot = new ScheduleSlot
@@ -123,12 +164,27 @@ namespace LisBlanc.AdminPanel.Controllers
                 if (existingSlot == null)
                 {
                     _context.ScheduleSlots.Add(slot);
+                    slotsAdded++;
+                }
+                else
+                {
+                    slotsSkipped++;
                 }
 
                 currentDate = currentDate.AddDays(1);
             }
 
             await _context.SaveChangesAsync();
+
+            // Формируем сообщение о результате
+            if (slotsAdded > 0)
+            {
+                TempData["Success"] = $"✅ {blockType.ToUpper()} добавлен для мастера {master.FullName} на период с {startDate:dd.MM.yyyy} по {endDate:dd.MM.yyyy}. Добавлено дней: {slotsAdded}";
+            }
+            if (slotsSkipped > 0)
+            {
+                TempData["Warning"] = $"⚠️ На {slotsSkipped} дней уже были блокировки, они пропущены.";
+            }
 
             return RedirectToAction(nameof(Index));
         }
@@ -144,12 +200,13 @@ namespace LisBlanc.AdminPanel.Controllers
                 // Не даем удалить слоты, связанные с подтвержденными заявками
                 if (slot.Status == SlotStatus.Booked)
                 {
-                    TempData["Error"] = "Нельзя удалить слот с подтвержденной записью";
+                    TempData["Error"] = "❌ Нельзя удалить слот с подтвержденной записью клиента";
                     return RedirectToAction(nameof(Index));
                 }
 
                 _context.ScheduleSlots.Remove(slot);
                 await _context.SaveChangesAsync();
+                TempData["Success"] = "✅ Блокировка успешно удалена";
             }
 
             return RedirectToAction(nameof(Index));

@@ -21,10 +21,10 @@ namespace LisBlanc.AdminPanel.Controllers.Client
 
         public async Task<IActionResult> Index(string tab = "upcoming")
         {
-            var phone = User.Identity.Name;
-            Console.WriteLine($"Телефон из авторизации: {phone}");
+            var username = User.Identity.Name;
+            Console.WriteLine($"Имя пользователя из авторизации: {username}");
 
-            if (string.IsNullOrEmpty(phone))
+            if (string.IsNullOrEmpty(username))
             {
                 return RedirectToAction("Login", "Account");
             }
@@ -32,20 +32,44 @@ namespace LisBlanc.AdminPanel.Controllers.Client
             var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
             var isAdminOrManager = userRole == "Admin" || userRole == "Manager";
 
+            // Получаем ID текущего пользователя
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            int? currentUserId = null;
+            if (!string.IsNullOrEmpty(userIdClaim))
+            {
+                currentUserId = int.Parse(userIdClaim);
+            }
+
             IQueryable<AppointmentRequest> query;
 
             if (isAdminOrManager)
             {
-                query = _context.AppointmentRequests
-                    .Include(a => a.Master)
-                    .Include(a => a.Service);
-            }
-            else
-            {
+                // Администраторы и менеджеры видят все записи
                 query = _context.AppointmentRequests
                     .Include(a => a.Master)
                     .Include(a => a.Service)
-                    .Where(a => a.ClientPhone == phone);
+                    .Include(a => a.User);
+            }
+            else
+            {
+                // Обычные клиенты видят только свои записи (по UserId)
+                if (currentUserId.HasValue)
+                {
+                    query = _context.AppointmentRequests
+                        .Include(a => a.Master)
+                        .Include(a => a.Service)
+                        .Include(a => a.User)
+                        .Where(a => a.UserId == currentUserId.Value);
+                }
+                else
+                {
+                    // Если UserId нет, пробуем найти по имени (fallback)
+                    query = _context.AppointmentRequests
+                        .Include(a => a.Master)
+                        .Include(a => a.Service)
+                        .Include(a => a.User)
+                        .Where(a => a.ClientName == username);
+                }
             }
 
             var appointments = await query.ToListAsync();
@@ -55,11 +79,11 @@ namespace LisBlanc.AdminPanel.Controllers.Client
             var now = DateTime.Now;
 
             ViewBag.Upcoming = appointments
-                .Where(a => a.CreatedAt > now && a.Status != RequestStatus.Rejected)
+                .Where(a => a.AppointmentDate > now && a.Status != RequestStatus.Rejected)
                 .ToList();
 
             ViewBag.Past = appointments
-                .Where(a => a.CreatedAt <= now || a.Status == RequestStatus.Rejected)
+                .Where(a => a.AppointmentDate <= now || a.Status == RequestStatus.Rejected)
                 .ToList();
 
             ViewBag.CurrentTab = tab;
@@ -82,7 +106,9 @@ namespace LisBlanc.AdminPanel.Controllers.Client
             }
 
             var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-            var phone = User.Identity.Name;
+            var username = User.Identity.Name;
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            int? currentUserId = !string.IsNullOrEmpty(userIdClaim) ? int.Parse(userIdClaim) : null;
 
             bool canCancel = false;
 
@@ -90,7 +116,11 @@ namespace LisBlanc.AdminPanel.Controllers.Client
             {
                 canCancel = true;
             }
-            else if (appointment.ClientPhone == phone)
+            else if (currentUserId.HasValue && appointment.UserId == currentUserId.Value)
+            {
+                canCancel = true;
+            }
+            else if (appointment.ClientName == username)
             {
                 canCancel = true;
             }
@@ -100,7 +130,8 @@ namespace LisBlanc.AdminPanel.Controllers.Client
                 return Forbid();
             }
 
-            if (appointment.CreatedAt <= DateTime.Now && userRole != "Admin")
+            // Проверяем, можно ли отменить (только будущие записи)
+            if (appointment.AppointmentDate <= DateTime.Now && userRole != "Admin")
             {
                 TempData["Error"] = "Нельзя отменить прошедшую запись";
                 return RedirectToAction(nameof(Index));
@@ -134,8 +165,8 @@ namespace LisBlanc.AdminPanel.Controllers.Client
         [HttpPost]
         public async Task<IActionResult> UpdateProfile(string email, string newPassword, string confirmPassword)
         {
-            var phone = User.Identity.Name;
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == phone);
+            var username = User.Identity.Name;
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
 
             if (user == null)
             {

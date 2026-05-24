@@ -1,48 +1,187 @@
 ﻿@model LisBlanc.AdminPanel.Models.Service
 
 @{
-    ViewData["Title"] = "Просмотр данных об услуге";
+    ViewData["Title"] = "Просмотр услуги";
 }
 
-<h1>Просмотр данных</h1>
+<style>
+    .detail-card {
+        border: none;
+        border-radius: 20px;
+        overflow: hidden;
+        background: white;
+        box-shadow: 0 5px 20px rgba(106, 13, 173, 0.1);
+        max-width: 600px;
+        margin: 0 auto;
+    }
 
-<div>
-    <h4>Услуга</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Name)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Name)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Description)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Description)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Price)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Price)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.DurationMinutes)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.DurationMinutes)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Category)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Category)
-        </dd>
-    </dl>
+        .detail-card .card-header {
+            background: linear-gradient(135deg, #b47aff, #8a5cd9);
+            color: white;
+            padding: 15px 20px;
+            border: none;
+        }
+
+            .detail-card .card-header h1 {
+                font-size: 1.2rem;
+                margin: 0;
+                font-weight: 600;
+            }
+
+            .detail-card .card-header i {
+                margin-right: 8px;
+            }
+
+        .detail-card .card-body {
+            padding: 20px;
+        }
+
+    .detail-table {
+        width: 100%;
+    }
+
+        .detail-table tr {
+            border-bottom: 1px solid #f0e6ff;
+        }
+
+            .detail-table tr:last-child {
+                border-bottom: none;
+            }
+
+        .detail-table th {
+            width: 100px;
+            padding: 10px 12px;
+            font-weight: 600;
+            color: #2d1b4e;
+            background: #faf5ff;
+            font-size: 0.8rem;
+        }
+
+        .detail-table td {
+            padding: 10px 12px;
+            color: #4a3a6b;
+            font-size: 0.9rem;
+        }
+
+    .category-badge {
+        background: linear-gradient(135deg, #e5d0ff, #d4b5ff);
+        color: #2d1b4e;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        display: inline-block;
+    }
+
+    .price-value {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #b47aff;
+    }
+
+    .duration-value {
+        background: #f3e8ff;
+        padding: 4px 12px;
+        border-radius: 20px;
+        display: inline-block;
+        font-size: 0.75rem;
+        color: #2d1b4e;
+    }
+
+    .btn-back, .btn-edit {
+        border: none;
+        border-radius: 10px;
+        padding: 6px 16px;
+        font-size: 0.85rem;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-back {
+        background: #6c757d;
+        color: white;
+    }
+
+        .btn-back:hover {
+            background: #5a6268;
+            color: white;
+        }
+
+    .btn-edit {
+        background: linear-gradient(135deg, #b47aff, #8a5cd9);
+        color: white;
+    }
+
+        .btn-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 10px rgba(106, 13, 173, 0.3);
+            color: white;
+        }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #f0e6ff;
+    }
+
+    .service-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #2d1b4e;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e5d0ff;
+    }
+</style>
+
+<div class="container mt-3">
+    <div class="detail-card">
+        <div class="card-header">
+            <h1>
+                <i class="fas fa-info-circle"></i> Просмотр услуги
+            </h1>
+        </div>
+        <div class="card-body">
+            <div class="service-name">@Model.Name</div>
+
+            <table class="detail-table">
+                @if (!string.IsNullOrEmpty(Model.Description))
+                {
+                    <tr>
+                        <th><i class="fas fa-align-left"></i> Описание</th>
+                        <td>@Model.Description</td>
+                    </tr>
+                }
+                <tr>
+                    <th><i class="fas fa-ruble-sign"></i> Цена</th>
+                    <td><span class="price-value">@Model.Price.ToString("N0") ₽</span></td>
+                </tr>
+                <tr>
+                    <th><i class="far fa-clock"></i> Длительность</th>
+                    <td><span class="duration-value">@Model.DurationMinutes мин</span></td>
+                </tr>
+                <tr>
+                    <th><i class="fas fa-tag"></i> Категория</th>
+                    <td><span class="category-badge">@Model.Category</span></td>
+                </tr>
+            </table>
+
+            <div class="action-buttons">
+                <a asp-action="Index" class="btn-back">
+                    <i class="fas fa-arrow-left"></i> Назад
+                </a>
+                <a asp-action="Edit" asp-route-id="@Model?.Id" class="btn-edit">
+                    <i class="fas fa-edit"></i> Редактировать
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Редактировать</a> |
-    <a asp-action="Index">Вернуться назад</a>
-</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+}
