@@ -2,6 +2,7 @@
 
 @{
     ViewData["Title"] = "Расписание на " + Model.SelectedDate.ToString("dd.MM.yyyy");
+    ViewBag.ActivePage = "Schedule";
 }
 
 <h1>Расписание мастеров</h1>
@@ -17,10 +18,14 @@
         </form>
     </div>
     <div class="col-md-6 text-end">
-        <a asp-action="CreateBlock" class="btn btn-warning">➕ Добавить блокировку</a>
-        <a asp-action="Index" asp-route-date="@Model.SelectedDate.AddDays(-1).ToString("yyyy-MM-dd")" class="btn btn-secondary">← Пред. день</a>
-        <a asp-action="Index" asp-route-date="@DateTime.Today.ToString("yyyy-MM-dd")" class="btn btn-info">Сегодня</a>
-        <a asp-action="Index" asp-route-date="@Model.SelectedDate.AddDays(1).ToString("yyyy-MM-dd")" class="btn btn-secondary">След. день →</a>
+        <a asp-action="PrintWord" asp-route-date="@Model.SelectedDate.ToString("yyyy-MM-dd")" class="btn btn-sm" target="_blank"
+           style="background: linear-gradient(135deg, #b47aff, #8a5cd9); color: white; border: none; border-radius: 10px; margin-right: 10px;">
+            <i class="fas fa-print"></i> Печать
+        </a>
+        <a asp-action="CreateBlock" class="btn btn-warning btn-sm">➕ Добавить блокировку</a>
+        <a asp-action="Index" asp-route-date="@Model.SelectedDate.AddDays(-1).ToString("yyyy-MM-dd")" class="btn btn-secondary btn-sm">← Пред. день</a>
+        <a asp-action="Index" asp-route-date="@Model.SelectedDate.AddDays(1).ToString("yyyy-MM-dd")" class="btn btn-secondary btn-sm">След. день →</a>
+        <a asp-action="Index" asp-route-date="@DateTime.Today.ToString("yyyy-MM-dd")" class="btn btn-info btn-sm">Сегодня</a>
     </div>
 </div>
 

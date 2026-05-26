@@ -34,16 +34,18 @@
                 white-space: nowrap;
             }
 
-        @@media (max-width: 768px) {
-            .navbar-nav .nav-link {
-                white-space: normal;
-                padding: 8px 12px;
-            }
+        
 
-            .container {
-                padding-left: 15px;
-                padding-right: 15px;
-            }
+        {
+            white-space: normal;
+            padding: 8px 12px;
+        }
+
+        .container {
+            padding-left: 15px;
+            padding-right: 15px;
+        }
+
         }
 
         /* Чтобы контент не прилипал к краям на мобилках */
@@ -70,6 +72,23 @@
         footer {
             flex-shrink: 0;
         }
+
+        /* ===== СТИЛИ ДЛЯ АКТИВНОЙ ВКЛАДКИ ===== */
+        .navbar-nav .nav-link.active {
+            font-weight: 700;
+            color: #b47aff !important;
+            border-bottom: 3px solid #b47aff;
+            background: transparent;
+        }
+
+        .navbar-nav .nav-item .nav-link.active {
+            background: transparent;
+        }
+
+        /* Для выпадающего меню пользователя */
+        .navbar-nav .dropdown .nav-link.active {
+            border-bottom: none;
+        }
     </style>
 </head>
 <body>
@@ -95,115 +114,3 @@
                             {
                                 <li class="nav-item">
                                     <a class="nav-link @(ViewBag.ActivePage == "Masters" ? "active" : "")" asp-controller="Masters" asp-action="Index">Мастера</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link @(ViewBag.ActivePage == "Services" ? "active" : "")" asp-controller="Services" asp-action="Index">Услуги</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link @(ViewBag.ActivePage == "Schedule" ? "active" : "")" asp-controller="Schedule" asp-action="Index">Расписание</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link @(ViewBag.ActivePage == "AppointmentRequests" ? "active" : "")" asp-controller="AppointmentRequests" asp-action="Index">Заявки</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link @(ViewBag.ActivePage == "Revenue" ? "active" : "")" asp-controller="Revenue" asp-action="Index">Выручка</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link @(ViewBag.ActivePage == "Users" ? "active" : "")" asp-controller="Users" asp-action="Index">Пользователи</a>
-                                </li>
-                            }
-                            else if (User.IsInRole("Manager"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link @(ViewBag.ActivePage == "Masters" ? "active" : "")" asp-controller="Masters" asp-action="Index">Мастера</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link @(ViewBag.ActivePage == "Services" ? "active" : "")" asp-controller="Services" asp-action="Index">Услуги</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link @(ViewBag.ActivePage == "Schedule" ? "active" : "")" asp-controller="Schedule" asp-action="Index">Расписание</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link @(ViewBag.ActivePage == "AppointmentRequests" ? "active" : "")" asp-controller="AppointmentRequests" asp-action="Index">Заявки</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link @(ViewBag.ActivePage == "Revenue" ? "active" : "")" asp-controller="Revenue" asp-action="Index">Выручка</a>
-                                </li>
-                            }
-                            else if (User.IsInRole("Client"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link @(ViewBag.ActivePage == "Profile" ? "active" : "")" asp-controller="Profile" asp-action="Index">Личный кабинет</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link @(ViewBag.ActivePage == "Appointment" ? "active" : "")" asp-controller="Appointment" asp-action="Step1">Записаться</a>
-                                </li>
-                            }
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link @(ViewBag.ActivePage == "Appointment" ? "active" : "")" asp-controller="Appointment" asp-action="Step1">Записаться</a>
-                            </li>
-                        }
-                    </ul>
-
-                    <ul class="navbar-nav">
-                        @if (User.Identity.IsAuthenticated)
-                        {
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-user"></i> @User.Identity.Name
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                    <li>
-                                        <form asp-controller="Account" asp-action="Logout" method="post">
-                                            <button type="submit" class="dropdown-item">
-                                                <i class="fas fa-sign-out-alt"></i> Выйти
-                                            </button>
-                                        </form>
-                                    </li>
-                                </ul>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Account" asp-action="Login">
-                                    <i class="fas fa-sign-in-alt"></i> Вход
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Account" asp-action="Register">
-                                    <i class="fas fa-user-plus"></i> Регистрация
-                                </a>
-                            </li>
-                        }
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-
-    <main role="main" class="pb-5">
-        <div class="container px-3 px-md-4">
-            @RenderBody()
-        </div>
-    </main>
-
-    <footer class="footer bg-light py-3 mt-auto">
-        <div class="container-fluid px-3 px-md-4">
-            <div class="row">
-                <div class="col text-center text-muted">
-                    &copy; 2026 - Салон красоты Lis Blanc
-                </div>
-            </div>
-        </div>
-    </footer>
-
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
-</body>
-</html>
