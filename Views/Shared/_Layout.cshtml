@@ -8,6 +8,23 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <style>
+        /* Стили для активной вкладки */
+        .navbar-nav .nav-link.active {
+            font-weight: 700;
+            color: #b47aff !important;
+            border-bottom: 3px solid #b47aff;
+            background: transparent;
+        }
+
+        .navbar-nav .nav-item .nav-link.active {
+            background: transparent;
+        }
+
+        /* Для выпадающего меню пользователя */
+        .navbar-nav .dropdown .nav-link.active {
+            border-bottom: none;
+        }
+
         /* Глобальные стили для адаптивности */
         .navbar-nav {
             flex-wrap: wrap;
@@ -68,7 +85,7 @@
                         @if (!User.IsInRole("Admin") && !User.IsInRole("Manager"))
                         {
                             <li class="nav-item">
-                                <a class="nav-link" asp-controller="Home" asp-action="Index">Главная</a>
+                                <a class="nav-link @(ViewBag.ActivePage == "Home" ? "active" : "")" asp-controller="Home" asp-action="Index">Главная</a>
                             </li>
                         }
 
@@ -77,50 +94,56 @@
                             if (User.IsInRole("Admin"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Masters" asp-action="Index">Мастера</a>
+                                    <a class="nav-link @(ViewBag.ActivePage == "Masters" ? "active" : "")" asp-controller="Masters" asp-action="Index">Мастера</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Services" asp-action="Index">Услуги</a>
+                                    <a class="nav-link @(ViewBag.ActivePage == "Services" ? "active" : "")" asp-controller="Services" asp-action="Index">Услуги</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Schedule" asp-action="Index">Расписание</a>
+                                    <a class="nav-link @(ViewBag.ActivePage == "Schedule" ? "active" : "")" asp-controller="Schedule" asp-action="Index">Расписание</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-controller="AppointmentRequests" asp-action="Index">Заявки</a>
+                                    <a class="nav-link @(ViewBag.ActivePage == "AppointmentRequests" ? "active" : "")" asp-controller="AppointmentRequests" asp-action="Index">Заявки</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Users" asp-action="Index">Пользователи</a>
+                                    <a class="nav-link @(ViewBag.ActivePage == "Revenue" ? "active" : "")" asp-controller="Revenue" asp-action="Index">Выручка</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link @(ViewBag.ActivePage == "Users" ? "active" : "")" asp-controller="Users" asp-action="Index">Пользователи</a>
                                 </li>
                             }
                             else if (User.IsInRole("Manager"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Masters" asp-action="Index">Мастера</a>
+                                    <a class="nav-link @(ViewBag.ActivePage == "Masters" ? "active" : "")" asp-controller="Masters" asp-action="Index">Мастера</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Services" asp-action="Index">Услуги</a>
+                                    <a class="nav-link @(ViewBag.ActivePage == "Services" ? "active" : "")" asp-controller="Services" asp-action="Index">Услуги</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Schedule" asp-action="Index">Расписание</a>
+                                    <a class="nav-link @(ViewBag.ActivePage == "Schedule" ? "active" : "")" asp-controller="Schedule" asp-action="Index">Расписание</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-controller="AppointmentRequests" asp-action="Index">Заявки</a>
+                                    <a class="nav-link @(ViewBag.ActivePage == "AppointmentRequests" ? "active" : "")" asp-controller="AppointmentRequests" asp-action="Index">Заявки</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link @(ViewBag.ActivePage == "Revenue" ? "active" : "")" asp-controller="Revenue" asp-action="Index">Выручка</a>
                                 </li>
                             }
                             else if (User.IsInRole("Client"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Profile" asp-action="Index">Личный кабинет</a>
+                                    <a class="nav-link @(ViewBag.ActivePage == "Profile" ? "active" : "")" asp-controller="Profile" asp-action="Index">Личный кабинет</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Appointment" asp-action="Step1">Записаться</a>
+                                    <a class="nav-link @(ViewBag.ActivePage == "Appointment" ? "active" : "")" asp-controller="Appointment" asp-action="Step1">Записаться</a>
                                 </li>
                             }
                         }
                         else
                         {
                             <li class="nav-item">
-                                <a class="nav-link" asp-controller="Appointment" asp-action="Step1">Записаться</a>
+                                <a class="nav-link @(ViewBag.ActivePage == "Appointment" ? "active" : "")" asp-controller="Appointment" asp-action="Step1">Записаться</a>
                             </li>
                         }
                     </ul>
