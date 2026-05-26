@@ -1,7 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Wordprocessing;
+using System.IO;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -51,6 +51,155 @@ namespace LisBlanc.AdminPanel.Controllers
             }
 
             return View(appointmentRequest);
+        }
+        // GET: AppointmentRequests/PrintWord/5
+        public async Task<IActionResult> PrintWord(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var appointment = await _context.AppointmentRequests
+                .Include(a => a.Master)
+                .Include(a => a.Service)
+                .Include(a => a.User)
+                .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (appointment == null) return NotFound();
+
+            using (MemoryStream stream = new MemoryStream())
+            {
+                // Создаём Word-документ
+                using (WordprocessingDocument wordDocument = WordprocessingDocument.Create(stream, WordprocessingDocumentType.Document))
+                {
+                    MainDocumentPart mainPart = wordDocument.AddMainDocumentPart();
+                    mainPart.Document = new Document();
+                    Body body = mainPart.Document.AppendChild(new Body());
+
+                    // Заголовок
+                    Paragraph headerPara = new Paragraph(
+                        new ParagraphProperties(new Justification() { Val = JustificationValues.Center }),
+                        new Run(new Text("САЛОН КРАСОТЫ LIS BLANC"))
+                        {
+                            RunProperties = new RunProperties(new Bold(), new FontSize() { Val = "32" })
+                        });
+                    body.AppendChild(headerPara);
+
+                    body.AppendChild(new Paragraph(new Run(new Break())));
+
+                    // Номер заявки
+                    Paragraph titlePara = new Paragraph(
+                        new ParagraphProperties(new Justification() { Val = JustificationValues.Center }),
+                        new Run(new Text($"ЗАЯВКА НА ЗАПИСЬ № {appointment.Id}"))
+                        {
+                            RunProperties = new RunProperties(new Bold(), new FontSize() { Val = "28" })
+                        });
+                    body.AppendChild(titlePara);
+
+                    body.AppendChild(new Paragraph(new Run(new Break())));
+
+                    // Даты
+                    AddInfoRow(body, "Дата создания заявки:", appointment.CreatedAt.ToString("dd.MM.yyyy HH:mm"));
+                    AddInfoRow(body, "Статус:", GetStatusText(appointment.Status));
+
+                    if (!string.IsNullOrEmpty(appointment.RejectionReason))
+                    {
+                        AddInfoRow(body, "Причина отказа:", appointment.RejectionReason);
+                    }
+
+                    body.AppendChild(new Paragraph(new Run(new Break())));
+
+                    // Заголовок секции "Клиент"
+                    AddSectionHeader(body, "ИНФОРМАЦИЯ О КЛИЕНТЕ");
+                    AddInfoRow(body, "Имя клиента:", appointment.ClientName);
+                    AddInfoRow(body, "Телефон:", appointment.ClientPhone);
+
+                    body.AppendChild(new Paragraph(new Run(new Break())));
+
+                    // Заголовок секции "Запись"
+                    AddSectionHeader(body, "ИНФОРМАЦИЯ О ЗАПИСИ");
+                    AddInfoRow(body, "Мастер:", appointment.Master?.FullName ?? "Не указан");
+                    AddInfoRow(body, "Специализация:", appointment.Master?.Specialization ?? "—");
+                    AddInfoRow(body, "Услуга:", appointment.Service?.Name ?? "Не указана");
+                    AddInfoRow(body, "Длительность:", $"{appointment.Service?.DurationMinutes ?? 0} минут");
+                    AddInfoRow(body, "Стоимость:", $"{appointment.Service?.Price.ToString("N0") ?? "0"} ₽");
+                    AddInfoRow(body, "Дата и время записи:", appointment.AppointmentDate?.ToString("dd.MM.yyyy HH:mm") ?? "Не указано");
+
+                    body.AppendChild(new Paragraph(new Run(new Break())));
+
+                    // Подписи
+                    Paragraph signaturesPara = new Paragraph(
+                        new ParagraphProperties(new Justification() { Val = JustificationValues.Both }),
+                        new Run(new TabChar()),
+                        new Run(new Text("____________________")),
+                        new Run(new TabChar()),
+                        new Run(new TabChar()),
+                        new Run(new Text("____________________")));
+                    body.AppendChild(signaturesPara);
+
+                    Paragraph signaturesTextPara = new Paragraph(
+                        new ParagraphProperties(new Justification() { Val = JustificationValues.Both }),
+                        new Run(new Text("Подпись клиента")),
+                        new Run(new TabChar()),
+                        new Run(new TabChar()),
+                        new Run(new TabChar()),
+                        new Run(new Text("Подпись мастера")));
+                    body.AppendChild(signaturesTextPara);
+
+                    body.AppendChild(new Paragraph(new Run(new Break())));
+
+                    // Футер
+                    Paragraph footerPara = new Paragraph(
+                        new ParagraphProperties(new Justification() { Val = JustificationValues.Center }),
+                        new Run(new Text($"Документ сформирован {DateTime.Now:dd.MM.yyyy HH:mm:ss}"))
+                        {
+                            RunProperties = new RunProperties(new FontSize() { Val = "20" })
+                        });
+                    body.AppendChild(footerPara);
+                }
+
+                stream.Position = 0;
+                return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.wordprocessingml.document", $"Заявка_{appointment.Id}_{DateTime.Now:yyyyMMdd_HHmmss}.docx");
+            }
+        }
+
+        // Вспомогательные методы
+        private void AddSectionHeader(Body body, string text)
+        {
+            Paragraph para = new Paragraph(
+                new ParagraphProperties(
+                    new Justification() { Val = JustificationValues.Center },
+                    new SpacingBetweenLines() { Before = "240", After = "120" }),
+                new Run(new Text(text))
+                {
+                    RunProperties = new RunProperties(new Bold(), new FontSize() { Val = "24" })
+                });
+            body.AppendChild(para);
+        }
+
+        private void AddInfoRow(Body body, string label, string value)
+        {
+            Paragraph para = new Paragraph(
+                new ParagraphProperties(new SpacingBetweenLines() { After = "80" }),
+                new Run(new Text(label))
+                {
+                    RunProperties = new RunProperties(new Bold(), new FontSize() { Val = "22" })
+                },
+                new Run(new TabChar()),
+                new Run(new Text(value))
+                {
+                    RunProperties = new RunProperties(new FontSize() { Val = "22" })
+                });
+            body.AppendChild(para);
+        }
+
+        private string GetStatusText(RequestStatus status)
+        {
+            return status switch
+            {
+                RequestStatus.Confirmed => "ПОДТВЕРЖДЕНА",
+                RequestStatus.Rejected => "ОТКЛОНЕНА",
+                RequestStatus.New => "НОВАЯ",
+                _ => status.ToString()
+            };
         }
 
         // GET: AppointmentRequests/Create
@@ -135,6 +284,7 @@ namespace LisBlanc.AdminPanel.Controllers
                 value = s.StartTime.ToString("yyyy-MM-dd HH:mm:ss")
             }));
         }
+
 
         // POST: AppointmentRequests/Create
         [HttpPost]

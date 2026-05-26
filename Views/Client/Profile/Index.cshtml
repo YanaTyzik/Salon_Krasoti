@@ -1,5 +1,6 @@
 ﻿@{
     ViewData["Title"] = "Личный кабинет";
+    ViewBag.ActivePage = "Profile";
     var upcoming = ViewBag.Upcoming as IEnumerable<AppointmentRequest>;
     var past = ViewBag.Past as IEnumerable<AppointmentRequest>;
     var currentTab = ViewBag.CurrentTab as string;
@@ -91,6 +92,9 @@
                                                 </button>
                                             </form>
                                         }
+                                        <a asp-action="PrintWord" asp-route-id="@item.Id" class="btn btn-sm" target="_blank" style="background: linear-gradient(135deg, #b47aff, #8a5cd9); color: white; border: none; border-radius: 10px; padding: 6px 12px;">
+                                            <i class="fas fa-print"></i> Талон
+                                        </a>
                                     </div>
                                 </div>
                             </div>
@@ -125,6 +129,9 @@
                                                                             item.Status == RequestStatus.Rejected ? "Отменена" : "Ожидает")
                             </span>
                         </div>
+                                    <a asp-action="PrintWord" asp-route-id="@item.Id" class="btn btn-sm" target="_blank" style="background: linear-gradient(135deg, #b47aff, #8a5cd9); color: white; border: none; border-radius: 10px; padding: 6px 12px;">
+                                        <i class="fas fa-print"></i> Талон
+                                    </a>
                     </div>
                 </div>
                                 }

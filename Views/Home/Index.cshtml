@@ -1,5 +1,6 @@
 ﻿@{
     ViewData["Title"] = "Главная";
+    ViewBag.ActivePage = "Home";
 }
 
 <div class="text-center welcome-container">
@@ -121,55 +122,6 @@
                             <span style="color: #b47aff; font-weight: bold;">от 4000 ₽</span>
                             <button type="button" class="btn btn-sm try-btn" style="background-color: #e5d0ff; color: #2d1b4e; border: 1px solid #d4b5ff;">Попробовать</button>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Призыв к действию -->
-<div class="container my-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8 text-center">
-            <h2 class="mb-4" style="color: #2d1b4e;">Готовы преобразиться?</h2>
-            <p class="lead mb-4" style="color: #5a4a6b;">Запишитесь онлайн и получите скидку 10% на первое посещение</p>
-            <a asp-controller="Booking" asp-action="Index" class="btn btn-lg px-5 py-3 rounded-pill" style="background: linear-gradient(135deg, #b47aff, #8a5cd9); color: white; border: none;">
-                Выбрать время
-            </a>
-        </div>
-    </div>
-</div>
-
-<!-- Отзывы -->
-<div class="py-5" style="background-color: #f3e8ff;">
-    <div class="container">
-        <h2 class="text-center mb-5" style="color: #2d1b4e; border-bottom: 3px solid #d4b5ff; padding-bottom: 15px;">Отзывы наших клиентов</h2>
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body p-4">
-                        <div style="color: #ffd700; font-size: 1.2rem; margin-bottom: 10px;">★★★★★</div>
-                        <p style="color: #5a4a6b; margin-bottom: 15px;">"Лучший салон в котором я была! Мастера настоящие профессионалы, всегда учитывают пожелания. Атмосфера уютная, чувствуешь себя как дома."</p>
-                        <p style="color: #2d1b4e; font-weight: bold; margin-bottom: 0;">Анна</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body p-4">
-                        <div style="color: #ffd700; font-size: 1.2rem; margin-bottom: 10px;">★★★★★</div>
-                        <p style="color: #5a4a6b; margin-bottom: 15px;">"Хожу уже полгода, всегда довольна результатом. Очень удобно записываться онлайн, всегда есть свободные окошки."</p>
-                        <p style="color: #2d1b4e; font-weight: bold; margin-bottom: 0;">Екатерина</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body p-4">
-                        <div style="color: #ffd700; font-size: 1.2rem; margin-bottom: 10px;">★★★★★</div>
-                        <p style="color: #5a4a6b; margin-bottom: 15px;">"Прекрасный салон, вежливый персонал, чистота и стерильность. Отдельное спасибо администраторам за приветливость!"</p>
-                        <p style="color: #2d1b4e; font-weight: bold; margin-bottom: 0;">Мария</p>
                     </div>
                 </div>
             </div>
