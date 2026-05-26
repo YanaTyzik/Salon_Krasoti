@@ -3,6 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LisBlanc.AdminPanel.Data;
 using LisBlanc.AdminPanel.Models;
+using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Wordprocessing;
+using System.IO;
 
 namespace LisBlanc.AdminPanel.Controllers
 {
@@ -60,6 +64,7 @@ namespace LisBlanc.AdminPanel.Controllers
 
             return View(viewModel);
         }
+
 
         // GET: Schedule/CreateBlock
         public async Task<IActionResult> CreateBlock()
@@ -188,6 +193,194 @@ namespace LisBlanc.AdminPanel.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+        // GET: Schedule/PrintWord
+        public async Task<IActionResult> PrintWord(DateTime? date)
+        {
+            DateTime selectedDate = date ?? DateTime.Today;
+
+            var masters = await _context.Masters
+                .Where(m => m.IsActive)
+                .ToListAsync();
+
+            var startOfDay = selectedDate.Date;
+            var endOfDay = startOfDay.AddDays(1).AddTicks(-1);
+
+            var slots = await _context.ScheduleSlots
+                .Include(s => s.Master)
+                .Include(s => s.AppointmentRequest)
+                    .ThenInclude(ar => ar.Service)
+                .Where(s => s.StartTime >= startOfDay && s.StartTime <= endOfDay)
+                .ToListAsync();
+
+            // Временные слоты с 9:00 до 21:00 (шаг 30 мин)
+            var timeSlots = new List<string>();
+            for (int hour = 9; hour <= 21; hour++)
+            {
+                timeSlots.Add($"{hour:D2}:00");
+                if (hour < 21) timeSlots.Add($"{hour:D2}:30");
+            }
+
+            using (MemoryStream stream = new MemoryStream())
+            {
+                using (WordprocessingDocument wordDocument = WordprocessingDocument.Create(stream, WordprocessingDocumentType.Document))
+                {
+                    MainDocumentPart mainPart = wordDocument.AddMainDocumentPart();
+                    mainPart.Document = new Document();
+                    Body body = mainPart.Document.AppendChild(new Body());
+
+                    // Заголовок
+                    Paragraph headerPara = new Paragraph(
+                        new ParagraphProperties(new Justification() { Val = JustificationValues.Center }),
+                        new Run(new Text("САЛОН КРАСОТЫ LIS BLANC"))
+                        {
+                            RunProperties = new RunProperties(new Bold(), new FontSize() { Val = "32" })
+                        });
+                    body.AppendChild(headerPara);
+
+                    Paragraph titlePara = new Paragraph(
+                        new ParagraphProperties(new Justification() { Val = JustificationValues.Center }),
+                        new Run(new Text("РАСПИСАНИЕ РАБОТЫ МАСТЕРОВ"))
+                        {
+                            RunProperties = new RunProperties(new Bold(), new FontSize() { Val = "28" })
+                        });
+                    body.AppendChild(titlePara);
+
+                    Paragraph datePara = new Paragraph(
+                        new ParagraphProperties(new Justification() { Val = JustificationValues.Center }),
+                        new Run(new Text(selectedDate.ToString("dd MMMM yyyy (dddd)")))
+                        {
+                            RunProperties = new RunProperties(new FontSize() { Val = "24" })
+                        });
+                    body.AppendChild(datePara);
+
+                    body.AppendChild(new Paragraph(new Run(new Break())));
+
+                    // Таблица
+                    Table table = new Table();
+
+                    // Стили таблицы - ИСПРАВЛЕНО
+                    TableProperties tblProps = new TableProperties(
+                        new TableBorders(
+                            new TopBorder() { Val = BorderValues.Single, Size = 1 },
+                            new BottomBorder() { Val = BorderValues.Single, Size = 1 },
+                            new LeftBorder() { Val = BorderValues.Single, Size = 1 },
+                            new RightBorder() { Val = BorderValues.Single, Size = 1 },
+                            new InsideHorizontalBorder() { Val = BorderValues.Single, Size = 1 },
+                            new InsideVerticalBorder() { Val = BorderValues.Single, Size = 1 }),
+                        new TableWidth() { Width = "5000", Type = TableWidthUnitValues.Dxa }); // Dxa вместо Twips
+                    table.AppendChild(tblProps);
+
+                    // Заголовок таблицы
+                    TableRow headerRow = new TableRow();
+                    headerRow.AppendChild(CreateTableCell("Мастер / Специализация", true, 2500));
+                    foreach (var timeSlot in timeSlots)
+                    {
+                        headerRow.AppendChild(CreateTableCell(timeSlot, true, 800));
+                    }
+                    table.AppendChild(headerRow);
+
+                    // Строки для каждого мастера
+                    foreach (var master in masters)
+                    {
+                        TableRow row = new TableRow();
+                        row.AppendChild(CreateTableCell($"{master.FullName}\n({master.Specialization})", false, 2500));
+
+                        var processedSlots = new HashSet<int>();
+                        int timeIndex = 0;
+
+                        while (timeIndex < timeSlots.Count)
+                        {
+                            var currentTimeSlot = timeSlots[timeIndex];
+                            var slotDateTime = selectedDate.Date.Add(TimeSpan.Parse(currentTimeSlot));
+                            var slotEndTime = slotDateTime.AddMinutes(30);
+
+                            var occupiedSlot = slots.FirstOrDefault(s =>
+                                s.MasterId == master.Id &&
+                                !processedSlots.Contains(s.Id) &&
+                                s.StartTime <= slotEndTime &&
+                                s.EndTime > slotDateTime);
+
+                            if (occupiedSlot != null)
+                            {
+                                processedSlots.Add(occupiedSlot.Id);
+                                int durationMinutes = (int)(occupiedSlot.EndTime - occupiedSlot.StartTime).TotalMinutes;
+                                int colSpan = (int)Math.Ceiling(durationMinutes / 30.0);
+
+                                string slotText = occupiedSlot.Status switch
+                                {
+                                    SlotStatus.Booked => occupiedSlot.AppointmentRequest?.ClientName ?? "Клиент",
+                                    SlotStatus.DayOff => "ВЫХОДНОЙ",
+                                    SlotStatus.SickLeave => "БОЛЬНИЧНЫЙ",
+                                    SlotStatus.Vacation => "ОТПУСК",
+                                    _ => ""
+                                };
+
+                                TableCell cell = CreateTableCell(slotText, false, 800 * colSpan);
+                                cell.Append(new TableCellProperties(new GridSpan() { Val = colSpan }));
+                                row.AppendChild(cell);
+
+                                timeIndex += colSpan;
+                            }
+                            else
+                            {
+                                row.AppendChild(CreateTableCell("—", false, 800));
+                                timeIndex++;
+                            }
+                        }
+
+                        table.AppendChild(row);
+                    }
+
+                    body.AppendChild(table);
+                    body.AppendChild(new Paragraph(new Run(new Break())));
+
+                    // Легенда
+                    Paragraph legendPara = new Paragraph(
+                        new ParagraphProperties(new Justification() { Val = JustificationValues.Left }),
+                        new Run(new Text("Условные обозначения: "))
+                        {
+                            RunProperties = new RunProperties(new Bold())
+                        });
+                    body.AppendChild(legendPara);
+                    body.AppendChild(new Paragraph(new Run(new Text("— свободно"))));
+                    body.AppendChild(new Paragraph(new Run(new Text("• Занято клиентом"))));
+                    body.AppendChild(new Paragraph(new Run(new Text("ВЫХОДНОЙ"))));
+                    body.AppendChild(new Paragraph(new Run(new Text("БОЛЬНИЧНЫЙ"))));
+                    body.AppendChild(new Paragraph(new Run(new Text("ОТПУСК"))));
+
+                    body.AppendChild(new Paragraph(new Run(new Break())));
+
+                    Paragraph footerPara = new Paragraph(
+                        new ParagraphProperties(new Justification() { Val = JustificationValues.Center }),
+                        new Run(new Text($"Документ сформирован {DateTime.Now:dd.MM.yyyy HH:mm:ss}"))
+                        {
+                            RunProperties = new RunProperties(new FontSize() { Val = "20" })
+                        });
+                    body.AppendChild(footerPara);
+                }
+
+                stream.Position = 0;
+                return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.wordprocessingml.document", $"Расписание_{selectedDate:yyyyMMdd}.docx");
+            }
+        }
+
+        private TableCell CreateTableCell(string text, bool isHeader, int width)
+        {
+            TableCell cell = new TableCell();
+            // ИСПРАВЛЕНО: используем TableWidthUnitValues.Dxa
+            cell.Append(new TableCellProperties(new TableCellWidth() { Width = width.ToString(), Type = TableWidthUnitValues.Dxa }));
+
+            Paragraph para = new Paragraph(new Run(new Text(text)));
+            if (isHeader)
+            {
+                para.ParagraphProperties = new ParagraphProperties(new Justification() { Val = JustificationValues.Center });
+                RunProperties runProps = new RunProperties(new Bold());
+                para.GetFirstChild<Run>().RunProperties = runProps;
+            }
+
+            cell.Append(para);
+            return cell;
+        }
 
         // POST: Schedule/DeleteSlot/5
         [HttpPost]
@@ -211,5 +404,6 @@ namespace LisBlanc.AdminPanel.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
     }
 }
